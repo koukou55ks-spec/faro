@@ -1,0 +1,53 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\kouko\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js",
+        "."
+      ]
+    },
+    "github": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\kouko\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-github\\dist\\index.js"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "postgres": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\kouko\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-postgres\\dist\\index.js"
+      ],
+      "env": {
+        "POSTGRES_CONNECTION_STRING": "${POSTGRES_CONNECTION_STRING}"
+      }
+    },
+    "memory": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\kouko\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-memory\\dist\\index.js"
+      ]
+    },
+    "vercel": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\kouko\\AppData\\Roaming\\npm\\node_modules\\@mistertk\\vercel-mcp\\build\\index.js"
+      ],
+      "env": {
+        "VERCEL_ACCESS_TOKEN": "${VERCEL_ACCESS_TOKEN}"
+      }
+    },
+    "notion": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\kouko\\AppData\\Roaming\\npm\\node_modules\\@notionhq\\notion-mcp-server\\dist\\index.js"
+      ],
+      "env": {
+        "NOTION_API_KEY": "${NOTION_API_KEY}"
+      }
+    }
+  }
+}

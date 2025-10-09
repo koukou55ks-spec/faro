@@ -1,0 +1,92 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:/Users/kouko/OneDrive/ドキュメント/Taxhack/frontend"
+      ],
+      "description": "ローカルファイルシステムアクセス（frontend開発用）"
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest"
+      ],
+      "env": {
+        "SUPABASE_URL": "https://your-project.supabase.co",
+        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_ACCESS_TOKEN}"
+      },
+      "description": "Supabaseデータベース管理（PostgreSQL + Auth）"
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "description": "GitHub連携（コード管理・PR作成）"
+    },
+    "vercel": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-vercel"
+      ],
+      "env": {
+        "VERCEL_ACCESS_TOKEN": "${VERCEL_ACCESS_TOKEN}",
+        "VERCEL_PROJECT_ID": "${VERCEL_PROJECT_ID}"
+      },
+      "description": "Vercelデプロイ管理（本番環境）"
+    },
+    "web-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "description": "Web検索（法令・税制情報取得用）"
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "description": "セッション間の情報保持（開発効率向上）"
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://user:password@localhost/faro_db"
+      ],
+      "description": "PostgreSQL直接接続（高度なクエリ実行用）"
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "description": "ブラウザ自動化（E2Eテスト・スクレイピング）"
+    }
+  },
+  "config": {
+    "autoConnect": ["filesystem", "supabase", "memory"],
+    "envFile": ".env.mcp.local",
+    "logging": {
+      "level": "info",
+      "file": "./logs/mcp.log"
+    }
+  }
+}

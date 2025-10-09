@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#grad)"/>
+  
+  <!-- Lock Symbol -->
+  <g transform="translate(256, 256)">
+    <!-- Shackle (Open) -->
+    <path d="M -60 -80 L -60 -120 C -60 -160 -30 -190 10 -190 C 50 -190 80 -160 80 -120 L 80 -80" 
+          fill="none" stroke="#ffffff" stroke-width="25" stroke-linecap="round"/>
+    
+    <!-- Lock Body -->
+    <rect x="-80" y="-60" width="160" height="140" rx="20" fill="#ffffff"/>
+    
+    <!-- Keyhole -->
+    <circle cx="0" cy="0" r="20" fill="url(#grad)"/>
+    <rect x="-10" y="10" width="20" height="40" rx="5" fill="url(#grad)"/>
+    
+    <!-- Unlock Arrow -->
+    <g transform="translate(60, -100)">
+      <path d="M 0 0 L 20 -20 M 20 -20 L 0 -40 M 20 -20 L -20 -20" 
+            fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+  
+  <!-- Text "U" -->
+  <text x="256" y="420" font-family="Arial, sans-serif" font-size="120" font-weight="bold" 
+        fill="#ffffff" text-anchor="middle">U</text>
+</svg>
+

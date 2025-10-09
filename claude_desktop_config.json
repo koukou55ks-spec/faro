@@ -1,0 +1,110 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "c:\\Users\\kouko\\OneDrive\\ドキュメント\\Taxhack"
+      ]
+    }
+  },
+  "allowed_commands": [
+    "// Next.js Development",
+    "Bash(npm run dev)",
+    "Bash(npm run build)",
+    "Bash(npm run start)",
+    "Bash(npm run lint)",
+    "Bash(npm test)",
+    "Bash(npm install:*)",
+    "Bash(npx:*)",
+
+    "// Vercel Deployment",
+    "Bash(vercel)",
+    "Bash(vercel --prod)",
+    "Bash(vercel env:*)",
+    "Bash(vercel login)",
+
+    "// Supabase CLI",
+    "Bash(supabase start)",
+    "Bash(supabase stop)",
+    "Bash(supabase db push)",
+    "Bash(supabase migration:*)",
+    "Bash(supabase functions:*)",
+
+    "// Git Operations",
+    "Bash(git status)",
+    "Bash(git add:*)",
+    "Bash(git commit:*)",
+    "Bash(git push:*)",
+    "Bash(git pull)",
+    "Bash(git branch:*)",
+    "Bash(git checkout:*)",
+    "Bash(git log:*)",
+    "Bash(git diff:*)",
+
+    "// Windows Directory Operations",
+    "Bash(dir:*)",
+    "Bash(cd frontend)",
+    "Bash(cd ..)",
+    "Bash(mkdir:*)",
+    "Bash(rmdir:*)",
+    "Bash(del:*)",
+
+    "// Process Management",
+    "Bash(tasklist)",
+    "Bash(taskkill /F /PID:*)",
+    "Bash(netstat -an)",
+
+    "// Development Testing",
+    "Bash(curl http://localhost:3000/*)",
+    "Bash(curl http://127.0.0.1:3000/*)",
+    "Bash(start http://localhost:3000/workspace)",
+    "Bash(start http://localhost:3000)",
+
+    "// Python (for testing/scripts)",
+    "Bash(python:*)",
+    "Bash(pip install:*)",
+    "Bash(pytest:*)",
+
+    "// TypeScript/JavaScript",
+    "Bash(tsc:*)",
+    "Bash(node:*)",
+
+    "// Environment Variables",
+    "Bash(echo %NEXT_PUBLIC_SUPABASE_URL%)",
+    "Bash(echo %GEMINI_API_KEY%)",
+    "Bash(set:*)",
+
+    "// File Operations",
+    "Read(frontend/**)",
+    "Read(supabase/**)",
+    "Read(*.md)",
+    "Read(.env*)",
+    "Read(package*.json)",
+    "Read(tsconfig.json)",
+    "Read(next.config.*)",
+    "Read(tailwind.config.*)",
+    "Write(frontend/**)",
+    "Write(supabase/**)",
+    "Write(*.md)",
+    "Edit(frontend/**)",
+    "Edit(supabase/**)",
+    "Edit(*.md)"
+  ],
+  "project_context": {
+    "name": "Faro - Personal CFO AI",
+    "type": "Next.js 14 + Supabase + Gemini 2.0",
+    "main_directory": "frontend",
+    "development_url": "http://localhost:3000",
+    "main_app_route": "/workspace",
+    "api_routes": [
+      "/api/chat",
+      "/api/notes",
+      "/api/auth"
+    ],
+    "deployment": "Vercel",
+    "database": "Supabase (PostgreSQL + pgvector)",
+    "ai_model": "Google Gemini 2.0 Flash"
+  }
+}

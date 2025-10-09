@@ -1,0 +1,636 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+# Faro - Personal CFO AI Application
+
+**Faro**は、知識格差を是正するためのパーソナルCFOアプリケーションです。Gemini 2.0 Flash、Next.js 14、Supabase PostgreSQLを使用した、データフライホイール戦略のパーソナルCFOアプリです。
+
+**実装ステータス**: Week 1 完了（認証、監視、テスト）+ Next.js 14 フロントエンド完了
+
+## Common Commands
+
+### Start the Servers
+
+```bash
+# Backend (FastAPI)
+python start.py
+# または
+uvicorn app.production_main:app --reload --port 8003
+
+# Frontend (Next.js)
+cd frontend
+npm run dev
+```
+
+**Access**:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8003
+- API Docs: http://localhost:8003/api/docs
+
+### Install Dependencies
+
+```bash
+# Backend
+pip install -r requirements_v2.txt
+
+# Frontend
+cd frontend
+npm install
+```
+
+### Database Setup
+
+```bash
+# Supabase CLI
+supabase db push
+
+# マイグレーション実行
+python scripts/migrate_to_supabase.py
+```
+
+### Run Tests
+
+```bash
+# Backend - すべてのテスト実行
+pytest
+
+# カテゴリ別テスト実行
+pytest -m unit              # ユニットテストのみ（高速）
+pytest -m integration       # 統合テストのみ
+pytest -m auth              # 認証テストのみ
+pytest -m flywheel          # データフライホイールテストのみ
+
+# 特定のテストファイル実行
+pytest tests/test_auth.py
+pytest tests/test_data_flywheel.py
+pytest tests/test_api.py
+
+# カバレッジ付き実行
+pytest --cov=app --cov-report=html --cov-report=term-missing
+
+# 並列実行（高速化）
+pytest -n auto
+
+# Frontend（将来実装予定）
+cd frontend
+npm run test
+```
+
+## Vision & Philosophy
+
+**Core Concept**: 全財務データ統合 × データフライホイール = 真のPersonal CFO
+
+Faroの**真の差別化**:
+
+1. **LLMの進化に頼る** - ChatGPT/Geminiの性能向上を活用（車輪の再発明をしない）
+2. **全財務データを1箇所に集約** - ノート、家計簿、投資、税務をFaroで一元管理
+3. **データフライホイール** - ユーザーが増えるほどAIの提案精度が指数的に向上
+4. **Spotifyスタイルのパーソナライゼーション** - 個別最適化 × 集合知
+
+### 成功モデルからの学び
+
+**Spotify (音楽推薦)**:
+- ユーザーの全リスニングデータを収集
+- 協調フィルタリングで「似た人が好きな曲」を推薦
+- ユーザーが増えるほど精度UP
+
+**Waze (交通情報)**:
+- ユーザーの運転データを匿名化して収集
+- 集合知で最適ルートを提案
+- ユーザーが増えるほど正確なルート情報
+
+**Duolingo (語学学習)**:
+- ユーザーの学習パターンを分析
+- 適応学習で個別カリキュラム生成
+- ユーザーが増えるほど教材の質が向上
+
+**Faro (財務最適化)**:
+```
+ユーザーの全財務データ（ノート + 家計簿 + 投資 + 税務）
+    ↓
+個別最適化: LLMが全データを見て個別提案
+    ↓
+匿名化して集合知に貢献: 「30代、年収600万、副業あり」の成功パターン
+    ↓
+新規ユーザーに高精度提案: 「92%が青色申告で平均14.8万円節税」
+    ↓
+ユーザー増 → データ増 → 精度UP → さらにユーザー増（フライホイール）
+```
+
+**Design Inspiration**:
+- **Spotify**: 協調フィルタリング × パーソナライゼーション
+- **Waze**: 匿名化された集合知
+- **Notion**: AI統合ノート
+- **Perplexity**: データフライホイール戦略
+
+## Tech Stack (実装済み)
+
+### Backend
+- **FastAPI 0.115.6 + Uvicorn 0.34.0** - 高性能Pythonフレームワーク
+- **Supabase (PostgreSQL + pgvector)** - スケーラブルDB + ベクトル検索
+- **Google Gemini 2.0 Flash** - メインAI（コスパ最強）
+- **SentenceTransformers (multilingual-e5-large)** - ベクトル埋め込み
+- **Sentry 1.40.0** - エラー追跡・監視（実装済み）
+- **データフライホイールエンジン** - 協調フィルタリング + 匿名化集合知（実装済み）
+- **Supabase Auth** - JWT認証（実装済み）
+- **pytest + pytest-asyncio** - テストフレームワーク（43+ tests）
+
+### Frontend
+- **Next.js 14.2.0 (App Router)** - Reactフレームワーク
+- **TypeScript 5** - 型安全
+- **Tailwind CSS 3.4** - スタイリング
+- **Supabase JS 2.39** - クライアント認証 + **Realtime**（実装済み）
+- **Lucide React** - アイコン
+- **Framer Motion** - アニメーション（準備済み）
+- **Recharts 2.10** - データ可視化（準備済み）
+
+### Infrastructure
+- **Vercel** - フロントエンドホスティング（設定済み）
+- **Railway/Render** - バックエンドホスティング（準備済み）
+- **Supabase Cloud** - データベース + 認証（設定済み）
+
+## Architecture Overview
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│           Next.js 14 Frontend (Vercel)                         │
+│  • 統合ダッシュボード（ノート + 家計簿 + 投資 + 税務）           │
+│  • Zustand State Management                                   │
+│  • shadcn/ui + Tailwind CSS                                   │
+│  • Supabase Realtime (デバイス間同期)                          │
+└────────────────────┬───────────────────────────────────────────┘
+                     │ REST API
+┌────────────────────▼───────────────────────────────────────────┐
+│         FastAPI Backend (Railway/Render)                       │
+│  • Gemini RAG (knowledge_base検索 + user_financial_dna統合)   │
+│  • データフライホイールエンジン                                 │
+│  • 協調フィルタリング（類似ユーザー検索）                        │
+│  • 匿名化パイプライン（個人特定不可能な集合知生成）              │
+└─────┬──────────────────────┬────────────────────────────────┘
+      │                      │
+      ▼                      ▼
+┌──────────────┐   ┌─────────────────────────────────────────┐
+│  Gemini API  │   │  Supabase PostgreSQL + pgvector         │
+│  2.0 Flash   │   │  【個人データ】                          │
+│              │   │  • user_financial_dna (全財務データ)     │
+└──────────────┘   │    - notes_text (ノート)                │
+                   │    - monthly_income/expenses (家計簿)   │
+                   │    - assets (投資・資産)                 │
+                   │    - tax_status (税務状況)               │
+                   │  • conversations, messages              │
+                   │  • knowledge_base (税務知識 + pgvector)  │
+                   │                                         │
+                   │  【集合知データ】                        │
+                   │  • aggregated_patterns (匿名化)         │
+                   │    - persona_hash                       │
+                   │    - success_count / total_count        │
+                   │    - avg_outcome                        │
+                   │                                         │
+                   │  • user_behavior_events (行動ログ)       │
+                   │    - query, click, read_time, etc.     │
+                   └─────────────────────────────────────────┘
+
+【データフライホイール】
+User A入力 → 個別最適化 → 匿名化 → 集合知DB
+                                    ↓
+User B入力 → 個別最適化 + 「似たユーザーの成功パターン」提案
+```
+
+## File Structure
+
+```
+Taxhack/
+├── app/                              # Backend (FastAPI)
+│   ├── production_main.py            # Main API (529行)
+│   ├── data_flywheel.py              # データフライホイールエンジン（実装済み）
+│   ├── auth.py                       # Supabase Auth + JWT検証（実装済み）
+│   ├── monitoring.py                 # Sentry監視 + エラー分類（実装済み）
+│   ├── enhanced_chatbot.py           # Gemini RAG チャットボット
+│   ├── cost_optimized_apis.py        # e-Gov Law API + GNews + NTA Scraper
+│   ├── news_and_scraper.py           # ニュース取得
+│   └── conversation_manager.py       # 会話管理
+├── frontend/                         # Frontend (Next.js 14) - 実装済み
+│   ├── app/                          # App Router
+│   │   ├── layout.tsx                # ルートレイアウト
+│   │   ├── page.tsx                  # トップページ（ランディング）
+│   │   ├── auth/
+│   │   │   ├── login/page.tsx        # ログイン
+│   │   │   └── signup/page.tsx       # 新規登録
+│   │   └── dashboard/page.tsx        # ダッシュボード（CFOチャット）
+│   ├── components/
+│   │   └── ui/                       # UIコンポーネント
+│   │       ├── button.tsx
+│   │       └── card.tsx
+│   ├── lib/
+│   │   ├── api-client.ts             # Backend APIクライアント（189行）
+│   │   └── supabase-client.ts        # Supabase認証クライアント（79行）
+│   ├── .env.local                    # 環境変数
+│   ├── vercel.json                   # Vercelデプロイ設定
+│   ├── package.json                  # 479 packages
+│   └── tsconfig.json
+├── supabase/                         # Supabaseスキーマ
+│   └── migrations/
+│       └── 002_data_flywheel_schema.sql  # 財務DNA + 集合知テーブル
+├── tests/                            # テスト（43+ tests）
+│   ├── conftest.py                   # pytest fixtures（342行）
+│   ├── test_auth.py                  # 認証テスト（278行）
+│   ├── test_data_flywheel.py         # データフライホイールテスト（378行）
+│   ├── test_api.py                   # APIエンドポイントテスト（369行）
+│   └── README.md                     # テストガイド
+├── static/                           # 旧フロントエンド（Vanilla JS）
+│   ├── cfo_app.html                  # 旧ダッシュボード（参考用）
+│   └── auth.html                     # 旧認証（参考用）
+├── start.py                          # バックエンド起動
+├── pytest.ini                        # pytest設定
+├── requirements_v2.txt               # Python依存関係
+├── CLAUDE.md                         # このファイル
+├── TESTING_IMPLEMENTATION_SUMMARY.md # テスト実装サマリー
+├── NEXTJS_IMPLEMENTATION_SUMMARY.md  # Next.js実装サマリー
+└── README.md                         # プロジェクト概要
+```
+
+## Key Components
+
+### 1. data_flywheel.py - データフライホイールエンジン（実装済み）
+
+**Main Class**: `DataFlywheelEngine`
+
+**Core Methods**:
+```python
+# 財務DNA管理
+update_financial_dna(user_id, notes_text, monthly_income, ...)
+get_financial_dna(user_id)
+
+# 協調フィルタリング（類似ユーザー検索）
+find_similar_users(user_id, threshold=0.7, limit=100)
+# → ベクトル類似度でコサイン距離計算
+
+# 成功パターン取得
+get_success_patterns(persona_hash, top_k=10)
+# → 「30代、年収500~700万、会社員」の成功パターン
+
+# AIアドバイス生成（個別最適化 + 集合知）
+generate_advice(user_id, question)
+# Phase 1: 個人データ取得
+# Phase 2: 類似ユーザー + 成功パターン
+# Phase 3: Gemini で統合プロンプト生成
+
+# 集合知への貢献
+contribute_to_collective_intelligence(user_id, action, outcome, success)
+# → 匿名化してaggregated_patternsテーブルに保存
+
+# 行動ログ
+log_behavior_event(user_id, event_type, topic, duration, scroll_depth)
+get_user_behavior_summary(user_id, days=30)
+```
+
+**データフロー**:
+```
+User入力 → update_financial_dna() → Gemini Embedding生成 → Supabase保存
+                                                              ↓
+User質問 → find_similar_users() → pgvector コサイン類似度検索
+                                  ↓
+                          get_success_patterns() → aggregated_patterns
+                                  ↓
+                          generate_advice() → Gemini 2.0 Flash
+                                  ↓
+                          AI回答（個別最適化 + 集合知）
+```
+
+### 2. Supabase Schema (002_data_flywheel_schema.sql)
+
+**実装済みテーブル**:
+
+**個人データ**:
+- `user_financial_dna` - 全財務データ統合（pgvector埋め込み付き）
+  - notes_text, notes_embedding (768次元ベクトル)
+  - monthly_income, monthly_expenses, savings_rate
+  - assets, tax_status
+  - persona_hash（匿名化用）
+  - age_group, income_level, occupation, goals
+
+**集合知データ**:
+- `aggregated_patterns` - 匿名化された成功パターン
+  - persona_hash（例: "30代_500-700万_会社員_節税"）
+  - action（例: "つみたてNISA開始"）
+  - success_count / total_count → success_rate
+  - avg_outcome（平均成果金額）
+
+**行動ログ**:
+- `user_behavior_events` - ユーザー行動追跡
+  - event_type: query, read, click, dismiss, refine, action_taken
+  - topic, duration_seconds, scroll_depth
+
+**実装済み関数**:
+```sql
+-- 類似ユーザー検索（協調フィルタリング）
+search_similar_users(query_user_id, match_threshold, match_count)
+-- → pgvector コサイン類似度検索
+
+-- 成功パターン取得
+get_success_patterns(persona_hash, top_k)
+-- → aggregated_patterns から成功率順に取得
+```
+
+**Row Level Security**: 実装済み、ユーザーは自分のデータのみアクセス可
+
+### 3. Next.js Frontend（実装済み）
+
+**App Router Structure**:
+```
+app/
+├── layout.tsx                # ルートレイアウト
+├── page.tsx                  # / (トップページ - ランディング)
+├── auth/
+│   ├── login/page.tsx        # /auth/login (ログイン)
+│   └── signup/page.tsx       # /auth/signup (新規登録)
+└── dashboard/page.tsx        # /dashboard (CFOチャット)
+```
+
+**API Integration** (`lib/api-client.ts` - 189行):
+```typescript
+// 主要メソッド
+apiClient.askEnhanced(text, userProfile?)
+apiClient.askWithFlywheel(question, userProfile, accessToken)
+apiClient.updateFinancialDNA(data, accessToken)
+apiClient.getSimilarUsers(userId, threshold, limit)
+apiClient.getSuccessPatterns(personaHash, topK)
+apiClient.logBehavior(data)
+apiClient.contributeToCollective(data)
+apiClient.searchLaws(keyword)
+apiClient.getNews(category?)
+```
+
+**Authentication** (`lib/supabase-client.ts` - 79行):
+```typescript
+// Supabase Auth統合
+signUp(email, password, metadata?)
+signIn(email, password)
+signOut()
+getCurrentUser()
+getAccessToken()
+refreshSession()
+```
+
+**UI Components** (`components/ui/`):
+- `Button` - バリアント対応（default, outline, ghost, etc.）
+- `Card` - 再利用可能カードコンポーネント
+
+**Features**:
+- ✅ 認証フロー完全実装（ログイン・新規登録）
+- ✅ CFOチャット（リアルタイムAI対話）
+- ✅ クイックアクション（つみたてNISA、確定申告、副業節税、iDeCo）
+- ✅ メッセージ履歴表示
+- ✅ レスポンシブデザイン
+- ✅ **Supabase Realtime**（マルチデバイス同期、プレゼンス追跡）
+- ⏳ プロフィール編集（今後実装）
+- ⏳ ノート機能（今後実装）
+- ⏳ 10年タイムライン（今後実装）
+
+**Realtime機能** (`lib/supabase-client.ts`):
+```typescript
+// メッセージのリアルタイム同期
+subscribeToMessages(conversationId, (msg) => console.log(msg))
+
+// 財務DNA更新の監視
+subscribeToFinancialDNA(userId, (data) => console.log(data))
+
+// オンライン状態の追跡
+trackPresence(userId)
+
+// 汎用テーブル購読
+subscribeToTable('user_financial_dna', 'UPDATE', callback)
+```
+
+使用例: `frontend/lib/realtime-example.tsx` 参照
+
+## Environment Variables
+
+**Backend** (`.env`):
+```bash
+# Supabase
+SUPABASE_URL=https://tckfgrxuxkxysmpemplj.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_KEY=eyJ...
+SUPABASE_JWT_SECRET=your-jwt-secret
+
+# AI APIs
+GEMINI_API_KEY=AIza...
+
+# Monitoring（本番環境のみ）
+SENTRY_DSN=https://...
+SLACK_WEBHOOK_URL=https://hooks.slack.com/...
+```
+
+**Frontend** (`frontend/.env.local`):
+```bash
+# Supabase（公開OK - Anon Keyのみ）
+NEXT_PUBLIC_SUPABASE_URL=https://tckfgrxuxkxysmpemplj.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+
+# Backend API
+NEXT_PUBLIC_API_URL=http://localhost:8003
+
+# 本番環境
+# NEXT_PUBLIC_API_URL=https://your-backend.railway.app
+```
+
+## Implementation Progress
+
+### ✅ Week 1 完了: セキュリティ & テスト基盤
+- **Day 1-2**: Supabase Auth実装（JWT検証、認証エンドポイント）
+- **Day 3-4**: Sentry監視実装（エラー追跡、Slack連携）
+- **Day 5-7**: pytest インフラ実装（43+ tests、fixtures、マーカー）
+
+### ✅ Next.js 14 フロントエンド完了
+- **認証**: ログイン/新規登録ページ
+- **ダッシュボード**: CFOチャット（リアルタイムAI対話）
+- **API統合**: Backend APIクライアント + Supabase クライアント
+- **UI**: Button, Card コンポーネント
+- **Vercel**: デプロイ設定完了
+
+### ⏳ 今後の実装
+- **Day 11-12**: プロフィール編集、ノート機能、10年タイムライン
+- **Day 13**: データフライホイール可視化
+- **Day 14**: 本番デプロイ（Vercel + Railway）
+
+## Development Workflow
+
+### Backend API追加
+
+1. **エンドポイント実装** (`app/production_main.py`):
+```python
+@app.post("/new-endpoint")
+async def new_endpoint(
+    request: NewRequest,
+    user: dict = Depends(get_current_user)  # 認証必須の場合
+):
+    # ビジネスロジック
+    result = data_flywheel_engine.some_method(user["user_id"], ...)
+    return {"result": result}
+```
+
+2. **テスト追加** (`tests/test_api.py`):
+```python
+@pytest.mark.integration
+def test_new_endpoint(client, mock_verify_jwt, auth_headers):
+    response = client.post(
+        "/new-endpoint",
+        headers=auth_headers,
+        json={"data": "test"}
+    )
+    assert response.status_code == 200
+```
+
+3. **Frontend API Client追加** (`frontend/lib/api-client.ts`):
+```typescript
+async newEndpoint(data: any, accessToken: string) {
+  return this.request('/new-endpoint', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(data),
+  })
+}
+```
+
+4. **Reactページ/コンポーネント** (`frontend/app/...`):
+```typescript
+'use client'
+import { apiClient } from '@/lib/api-client'
+import { getAccessToken } from '@/lib/supabase-client'
+
+export default function NewFeaturePage() {
+  const handleAction = async () => {
+    const token = await getAccessToken()
+    const { data } = await apiClient.newEndpoint({...}, token!)
+  }
+  return <div>...</div>
+}
+```
+
+### Database Schema Changes
+
+```bash
+# 新しいマイグレーション作成
+touch supabase/migrations/003_add_new_table.sql
+
+# SQL記述例
+CREATE TABLE new_table (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  data JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS有効化
+ALTER TABLE new_table ENABLE ROW LEVEL SECURITY;
+
+-- ポリシー作成（ユーザーは自分のデータのみ）
+CREATE POLICY "Users can view own data"
+  ON new_table FOR SELECT
+  USING (auth.uid() = user_id);
+
+# ローカル適用
+supabase db push
+
+# 本番適用
+supabase db push --db-url postgresql://...
+```
+
+## Production Deployment
+
+### Frontend (Vercel)
+
+```bash
+cd frontend
+
+# Vercel CLIでデプロイ
+vercel login
+vercel --prod
+
+# 環境変数設定
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+vercel env add NEXT_PUBLIC_API_URL
+```
+
+または GitHub連携:
+1. https://vercel.com でリポジトリ接続
+2. Root Directory: `frontend`
+3. 環境変数設定
+4. Deploy
+
+### Backend (Railway/Render)
+
+**Railway**:
+```bash
+railway login
+railway init
+railway up
+
+# 環境変数設定
+railway variables set SUPABASE_URL=...
+railway variables set SUPABASE_SERVICE_KEY=...
+railway variables set GEMINI_API_KEY=...
+railway variables set SENTRY_DSN=...
+```
+
+**Render**:
+1. https://render.com でリポジトリ接続
+2. Build Command: `pip install -r requirements_v2.txt`
+3. Start Command: `uvicorn app.production_main:app --host 0.0.0.0 --port $PORT`
+4. 環境変数設定
+
+### Database (Supabase)
+
+自動マネージド、設定不要。マイグレーションのみ実行：
+```bash
+supabase db push --db-url postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+```
+
+## Architecture Notes
+
+### 認証フロー
+```
+1. Frontend: signUp() → Supabase Auth
+2. Supabase: ユーザー作成 → JWT発行
+3. Frontend: localStorage保存 → /dashboard リダイレクト
+4. Dashboard: getAccessToken() → Bearer token取得
+5. API Request: Authorization: Bearer <token>
+6. Backend: verify_jwt() → JWT検証 → user_id抽出
+7. Backend: ビジネスロジック実行（RLS自動適用）
+```
+
+### データフライホイールフロー
+```
+User A: 副業月10万円、NISA積立中
+    ↓
+update_financial_dna() → Gemini Embedding生成 → Supabase保存
+    ↓
+匿名化: persona_hash = "30代_500-700万_会社員_節税"
+    ↓
+User B（同じペルソナ）質問: "副業の節税方法は？"
+    ↓
+find_similar_users() → User A検出（類似度0.92）
+    ↓
+get_success_patterns() → "青色申告: 成功率82%, 平均14.8万円節税"
+    ↓
+generate_advice() → Gemini が個別状況 + 集合知で回答生成
+```
+
+### テスト戦略
+- **Unit tests**: ビジネスロジック（mock使用、高速）
+- **Integration tests**: API + DB（実DBまたはtest DB）
+- **E2E tests**: Playwright（今後追加予定）
+
+## Reference Documents
+
+- **TESTING_IMPLEMENTATION_SUMMARY.md**: pytest実装詳細（Day 5-7）
+- **NEXTJS_IMPLEMENTATION_SUMMARY.md**: Next.js実装詳細（Day 8-10）
+- **tests/README.md**: テスト実行ガイド
+- **frontend/README.md**: フロントエンド開発ガイド
+
+---
+
+**実装ステータス**: Week 1完了 + Next.js完了。本番デプロイ準備完了。
