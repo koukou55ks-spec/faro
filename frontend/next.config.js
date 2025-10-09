@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -37,6 +39,24 @@ const nextConfig = {
     }
     return config;
   },
-};
+}
 
-module.exports = nextConfig;
+// Sentry設定でラップ
+module.exports = withSentryConfig(
+  nextConfig,
+  {
+    // ビルド時のSentry設定
+    silent: true,
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+  },
+  {
+    // Sentryアップロード設定
+    widenClientFileUpload: true,
+    transpileClientSDK: true,
+    tunnelRoute: '/monitoring',
+    hideSourceMaps: true,
+    disableLogger: true,
+    automaticVercelMonitors: true,
+  }
+)

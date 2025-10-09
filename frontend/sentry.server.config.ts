@@ -1,0 +1,20 @@
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+
+  // トレースサンプリングレート
+  tracesSampleRate: 1.0,
+
+  // デバッグモード（開発環境のみ）
+  debug: process.env.NODE_ENV === 'development',
+
+  // 環境名
+  environment: process.env.NODE_ENV,
+
+  // サーバーサイドのみの設定
+  integrations: [
+    // Node.jsパフォーマンス監視
+    Sentry.nodeProfilingIntegration(),
+  ],
+})
