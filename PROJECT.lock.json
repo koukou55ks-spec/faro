@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "locked_at": "2025-01-10T12:00:00Z",
+  "locked_by": "human",
+
+  "project": {
+    "name": "Faro",
+    "description": "知識格差を是正するパーソナルCFO AIアプリ",
+    "status": "MVP開発中",
+    "owner": "kouko",
+    "created": "2024-09-27",
+    "target_launch": "2025-02-01"
+  },
+
+  "immutable_rules": {
+    "comment": "これらのルールはAIが絶対に変更してはいけない",
+    "rules": [
+      "技術スタックをAIが勝手に変更しない",
+      "ファイル構造の大幅変更は事前承認が必要",
+      "削除はarchiveフォルダへ移動（直接削除禁止）",
+      "このPROJECT.lock.jsonはhumanのみ編集可能",
+      "MDファイルの新規作成は最小限に"
+    ]
+  },
+
+  "tech_stack": {
+    "locked": true,
+    "comment": "変更にはunlock_key必要",
+    "frontend": {
+      "framework": "Next.js",
+      "version": "15.x",
+      "ui": "Tailwind CSS + shadcn/ui",
+      "state": "Zustand"
+    },
+    "backend": {
+      "api": "Next.js API Routes",
+      "database": "Supabase (PostgreSQL)",
+      "vector": "pgvector",
+      "auth": "Supabase Auth"
+    },
+    "ai": {
+      "primary": "Google Gemini 2.0 Flash",
+      "secondary": null,
+      "embeddings": "Gemini Embeddings"
+    },
+    "deployment": {
+      "frontend": "Vercel",
+      "database": "Supabase Cloud"
+    }
+  },
+
+  "file_structure": {
+    "locked": true,
+    "comment": "新規フォルダ作成にはapproval必要",
+    "allowed_paths": [
+      "frontend/app/**",
+      "frontend/components/**",
+      "frontend/lib/**",
+      "supabase/migrations/**",
+      ".claude/commands/**",
+      "scripts/**"
+    ],
+    "protected_files": [
+      "PROJECT.lock.json",
+      "CLAUDE.md",
+      ".env.local"
+    ]
+  },
+
+  "documentation": {
+    "single_source_of_truth": "PROJECT.lock.json",
+    "allowed_docs": [
+      {
+        "file": "CLAUDE.md",
+        "purpose": "Claude Code用ガイドライン",
+        "editable_by": "human_only"
+      },
+      {
+        "file": ".claude/CONTEXT.md",
+        "purpose": "現在の作業コンテキスト",
+        "editable_by": "ai_allowed",
+        "auto_update": "weekly"
+      },
+      {
+        "file": "README.md",
+        "purpose": "プロジェクト概要",
+        "editable_by": "ai_with_approval"
+      }
+    ],
+    "deprecated": [
+      "IMPLEMENTATION_SUMMARY.md",
+      "MIGRATION_COMPLETE.md",
+      "CLEANUP_PLAN.md",
+      "DEPLOY_NOW.md",
+      "UPGRADE_COMPLETE.md",
+      "SECURITY_CHECKLIST.md"
+    ]
+  },
+
+  "ai_permissions": {
+    "allowed_actions": [
+      "create_files_in_allowed_paths",
+      "edit_existing_files",
+      "run_commands",
+      "update_context_md",
+      "create_tests",
+      "fix_bugs"
+    ],
+    "requires_approval": [
+      "delete_files",
+      "change_tech_stack",
+      "modify_database_schema",
+      "create_new_md_files",
+      "modify_project_lock"
+    ],
+    "forbidden": [
+      "edit_project_lock_json",
+      "delete_env_files",
+      "change_deployment_target",
+      "remove_core_features"
+    ]
+  },
+
+  "current_priorities": {
+    "immediate": [
+      "テストカバレッジ80%達成",
+      "Sentryセットアップ"
+    ],
+    "this_week": [
+      "Stripe決済実装",
+      "ユーザーオンボーディング"
+    ],
+    "backlog": [
+      "PWA対応",
+      "多言語対応"
+    ]
+  },
+
+  "decision_log": [
+    {
+      "date": "2025-01-10",
+      "decision": "FastAPI削除、Next.js API Routesに統一",
+      "by": "AI提案、human承認",
+      "reason": "MVPではシンプルなアーキテクチャで十分"
+    },
+    {
+      "date": "2025-01-10",
+      "decision": "ChromaDBをpgvectorに置き換え",
+      "by": "AI提案、human承認",
+      "reason": "デプロイ簡素化のため"
+    }
+  ],
+
+  "unlock_key": {
+    "comment": "tech_stackやfile_structureを変更する際に必要",
+    "command": "unlock:2025-kouko-faro",
+    "usage": "Claude Codeに「unlock:2025-kouko-faro で技術スタック変更を承認」と伝える"
+  },
+
+  "checksum": "sha256:a7b9c2d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+}
