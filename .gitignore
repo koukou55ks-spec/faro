@@ -1,103 +1,44 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
 
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
+# Testing
+coverage/
+*.lcov
+.pytest_cache/
 htmlcov/
 .tox/
 .nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
 
-# Translations
-*.mo
-*.pot
+# Production
+build/
+dist/
+.next/
+out/
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+# Misc
+.DS_Store
+*.pem
 
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Environments (CRITICAL - Never commit these!)
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.production
 .env.mcp
 .env.mcp.local
 .env.notion
+.config/.env.local
 .venv
 env/
 venv/
@@ -105,38 +46,48 @@ ENV/
 env.bak/
 venv.bak/
 
-# Spyder project settings
-.spyderproject
-.spyproject
+# Vercel
+.vercel
 
-# Rope project settings
-.ropeproject
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
 
-# mkdocs documentation
-/site
+# Turbo
+.turbo
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# TaxHack specific
-chroma_db/
-ecosystem_learning.db
-learning_data.json
-*.log
-output/
-temp/
-
-# 大容量データファイル（GitHubには上げない、デプロイ時に再取得）
+# Data & Large files
+data/laws/raw/*
+data/laws/processed/*
 data/laws_xml/
+data/embeddings/*
 data/*.zip
 data/bulk_laws.zip
-*.sqlite3
+!data/**/.gitkeep
 vector_store/
+chroma_db/
+chroma_notes_db/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+user_notes.db
+ecosystem_learning.db
+database/
+
+# Backup & Archive
+backup_*/
+backup_old_structure/
+archive/
+.archive_old/
+temp/
+output/
+
+# Logs
+logs/
+*.log
+unloq.log
 
 # IDE
 .vscode/
@@ -158,31 +109,13 @@ Thumbs.db
 secrets.json
 api_keys.json
 
-# Logs
-logs/
-*.log
-unloq.log
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.ipynb_checkpoints
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-user_notes.db
-chroma_db/
-chroma_notes_db/
-database/
-
-# Archive & Temp
-archive/
-.archive_old/
-temp/
-output/
-
-# Node.js
-node_modules/
-.next/
-.turbo/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
+# Learning data
+learning_data.json

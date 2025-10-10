@@ -62,7 +62,7 @@ CREATE TABLE notes (
     tags TEXT[],
     category TEXT CHECK (category IN ('finance', 'tax', 'business', 'goals', 'personal')),
     is_private BOOLEAN DEFAULT TRUE,
-    embedding VECTOR(1536), -- Voyage AI embeddings
+    embedding VECTOR(768), -- Gemini text-embedding-004 (768 dimensions)
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -167,7 +167,7 @@ CREATE TABLE knowledge_base (
     source TEXT, -- 'e-gov', 'nta', 'manual'
     category TEXT,
     law_id TEXT,
-    embedding VECTOR(1536), -- Voyage AI embeddings
+    embedding VECTOR(768), -- Gemini text-embedding-004 (768 dimensions)
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -206,7 +206,7 @@ CREATE INDEX analytics_events_created_at_idx ON analytics_events(created_at DESC
 
 -- Vector similarity search for notes
 CREATE OR REPLACE FUNCTION search_notes(
-    query_embedding VECTOR(1536),
+    query_embedding VECTOR(768),
     match_threshold FLOAT,
     match_count INT,
     filter_user_id UUID
@@ -236,7 +236,7 @@ $$;
 
 -- Vector similarity search for knowledge base
 CREATE OR REPLACE FUNCTION search_knowledge(
-    query_embedding VECTOR(1536),
+    query_embedding VECTOR(768),
     match_threshold FLOAT,
     match_count INT
 )

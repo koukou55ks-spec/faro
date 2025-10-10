@@ -34,7 +34,11 @@
       "Bash(\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" \"http://127.0.0.1:8003/static/index.html\")",
       "Bash(cmd /c:*)",
       "Bash(\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" \"http://127.0.0.1:8003/static/cfo_app_enhanced.html\")",
-      "Bash(\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" \"http://127.0.0.1:8003/static/workspace.html\")"
+      "Bash(\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" \"http://127.0.0.1:8003/static/workspace.html\")",
+      "Bash(pnpm type-check:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
