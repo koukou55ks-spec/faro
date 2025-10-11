@@ -38,7 +38,9 @@
       "Bash(pnpm type-check:*)",
       "Bash(cat:*)",
       "Bash(ls:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(pnpm add:*)",
+      "Bash(npx expo start:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,73 +1,41 @@
-/**
- * Chat API Route - Clean Architecture Implementation
- * Uses @faro/core and @faro/infrastructure packages
- */
-
-import { NextRequest, NextResponse } from 'next/server'
-import { SendMessageUseCase } from '@faro/core'
-import { InMemoryConversationRepository, GeminiService } from '@faro/infrastructure'
-import { randomUUID } from 'crypto'
-
-// Use in-memory repository to bypass RLS issues during development
-const conversationRepository = new InMemoryConversationRepository()
+import { NextRequest, NextResponse } from 'next/server';
+import { GeminiService } from '@faro/infrastructure';
+import { SendMessageUseCase } from '@faro/core';
+import { SupabaseConversationRepository } from '@faro/infrastructure';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    let { conversationId, userId, message } = body
+    const { message, conversationId, userId } = await request.json();
 
-    console.log('Chat API received:', { conversationId, userId, message })
-
-    if (!message || !userId) {
-      console.error('Missing required fields:', { message: !!message, userId: !!userId })
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!message || !conversationId || !userId) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
-    // Auto-generate conversationId if not provided
-    if (!conversationId) {
-      conversationId = randomUUID()
-    }
-
-    const geminiApiKey = process.env.GEMINI_API_KEY
-    if (!geminiApiKey) {
-      return NextResponse.json({ error: 'API configuration error' }, { status: 500 })
-    }
-    const aiService = new GeminiService(geminiApiKey)
+    // Initialize services
+    const geminiService = new GeminiService(process.env.GEMINI_API_KEY!);
+    const conversationRepo = new SupabaseConversationRepository(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    );
 
     // Execute use case
-    const sendMessageUseCase = new SendMessageUseCase(conversationRepository, aiService)
-
-    const result = await sendMessageUseCase.execute({
-      conversationId,
-      userId,
-      content: message,
-    })
+    const useCase = new SendMessageUseCase(conversationRepo, geminiService);
+    const response = await useCase.execute(conversationId, userId, message);
 
     return NextResponse.json({
-      success: true,
-      data: {
-        userMessage: result.userMessage.toJSON(),
-        assistantMessage: result.assistantMessage.toJSON(),
-        conversation: result.conversation.toJSON(),
-      },
-    })
+      id: response.id,
+      content: response.content,
+      role: response.role,
+      timestamp: response.timestamp,
+    });
   } catch (error) {
-    console.error('Chat API error:', error)
-
-    if (error instanceof Error) {
-      if (error.message === 'Conversation not found') {
-        return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
-      }
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-      }
-      // Return detailed error for debugging
-      return NextResponse.json({
-        error: 'Internal server error',
-        details: error.message
-      }, { status: 500 })
-    }
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Chat API error:', error);
+    return NextResponse.json(
+      { error: 'Failed to process message' },
+      { status: 500 }
+    );
   }
 }

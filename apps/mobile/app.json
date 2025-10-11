@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Faro",
+    "slug": "faro-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "scheme": "faro",
+    "owner": "koukou55",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F0F0F"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.faro.mobile",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0F0F0F"
+      },
+      "package": "com.faro.mobile",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4fafeaab-06ab-4efc-a13d-c92dc4a13825"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/4fafeaab-06ab-4efc-a13d-c92dc4a13825"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
+}

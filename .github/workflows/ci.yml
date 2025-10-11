@@ -1,128 +1,143 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
+  pull_request:
+    branches: [main, master, develop]
   push:
     branches: [main, master, develop]
-  pull_request:
-    branches: [main, master]
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9.15.4'
 
 jobs:
-  # ===================================
-  # Job 1: コード品質チェック
-  # ===================================
-  quality:
-    name: Code Quality Check
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
       - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Run TypeScript type check
-        working-directory: ./frontend
-        run: npm run type-check
+        run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
-        working-directory: ./frontend
-        run: npm run lint
+        run: pnpm lint
 
-      - name: Build check
-        working-directory: ./frontend
-        run: npm run build
-
-  # ===================================
-  # Job 2: テスト実行
-  # ===================================
-  test:
-    name: Run Tests
+  type-check:
+    name: Type Check
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
       - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: Run tests with coverage
-        working-directory: ./frontend
-        run: npm test -- --coverage --passWithNoTests
-        continue-on-error: true
+      - name: Run TypeScript type check
+        run: pnpm type-check
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./frontend/coverage/lcov.info
-          flags: frontend
-          name: frontend-coverage
-        continue-on-error: true
-
-  # ===================================
-  # Job 3: Vercelプレビューデプロイ
-  # ===================================
-  deploy-preview:
-    name: Deploy to Vercel (Preview)
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    needs: [quality, test]
-    if: github.event_name == 'pull_request'
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./frontend
-          scope: ${{ secrets.VERCEL_ORG_ID }}
+          version: ${{ env.PNPM_VERSION }}
 
-  # ===================================
-  # Job 4: 本番デプロイ（mainブランチのみ）
-  # ===================================
-  deploy-production:
-    name: Deploy to Vercel (Production)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: pnpm test
+
+  e2e:
+    name: E2E Tests
     runs-on: ubuntu-latest
-    needs: [quality, test]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Deploy to Vercel Production
-        uses: amondnet/vercel-action@v25
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: ./frontend
-          scope: ${{ secrets.VERCEL_ORG_ID }}
+          version: ${{ env.PNPM_VERSION }}
 
-      - name: Notify deployment success
-        if: success()
-        run: |
-          echo "✅ Production deployment successful!"
-          echo "🚀 URL: https://faro.vercel.app"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          CI: true
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}

@@ -1,37 +1,30 @@
 name: Security Scan
 
 on:
+  pull_request:
+    branches: [main, master, develop]
   push:
     branches: [main, master]
-  pull_request:
-    branches: [main, master]
   schedule:
-    # 毎週月曜日 09:00 (JST) に実行
-    - cron: '0 0 * * 1'
+    # Run security scan every Monday at 9:00 UTC
+    - cron: '0 9 * * 1'
 
 jobs:
-  # ===================================
-  # 依存関係の脆弱性スキャン
-  # ===================================
-  dependency-scan:
-    name: Dependency Vulnerability Scan
+  dependency-review:
+    name: Dependency Review
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'pull_request'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+  snyk:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Run npm audit
-        working-directory: ./frontend
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
-
-      - name: Run Snyk security scan
+      - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@master
         continue-on-error: true
         env:
@@ -39,44 +32,28 @@ jobs:
         with:
           args: --severity-threshold=high
 
-  # ===================================
-  # シークレット漏洩チェック
-  # ===================================
-  secret-scan:
-    name: Secret Leak Detection
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Gitleaks scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-
-  # ===================================
-  # コードスキャン（CodeQL）
-  # ===================================
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
     permissions:
-      security-events: write
       actions: read
       contents: read
+      security-events: write
+
+    strategy:
+      matrix:
+        language: ['javascript', 'typescript']
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript, typescript
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
