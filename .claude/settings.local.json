@@ -40,7 +40,8 @@
       "Bash(ls:*)",
       "Bash(rm:*)",
       "Bash(pnpm add:*)",
-      "Bash(npx expo start:*)"
+      "Bash(npx expo start:*)",
+      "Bash(\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" \"https://vercel.com/new\")"
     ],
     "deny": [],
     "ask": []
