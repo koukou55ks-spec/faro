@@ -13,8 +13,5 @@ Sentry.init({
   environment: process.env.NODE_ENV,
 
   // サーバーサイドのみの設定
-  integrations: [
-    // Node.jsパフォーマンス監視
-    Sentry.nodeProfilingIntegration(),
-  ],
+  integrations: [],
 })

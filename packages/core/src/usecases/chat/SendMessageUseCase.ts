@@ -31,7 +31,6 @@ export class SendMessageUseCase {
         id: input.conversationId,
         userId: input.userId,
         title: 'New Conversation',
-        messages: [],
       })
       await this.conversationRepository.save(conversation)
     }

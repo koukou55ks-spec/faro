@@ -202,7 +202,7 @@ export function subscribeToTable(
   const channel = supabase
     .channel(`table:${table}`)
     .on(
-      'postgres_changes',
+      'postgres_changes' as any,
       {
         event,
         schema: 'public',
