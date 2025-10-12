@@ -1,9 +1,10 @@
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "vector";
 
 -- Users table (extends Supabase auth.users)
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
@@ -13,8 +14,8 @@ CREATE TABLE public.profiles (
 );
 
 -- Conversations table
-CREATE TABLE public.conversations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS public.conversations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     title TEXT NOT NULL DEFAULT 'New Conversation',
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -22,8 +23,8 @@ CREATE TABLE public.conversations (
 );
 
 -- Messages table
-CREATE TABLE public.messages (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS public.messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     conversation_id UUID REFERENCES public.conversations(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     content TEXT NOT NULL,
@@ -34,8 +35,8 @@ CREATE TABLE public.messages (
 );
 
 -- Transactions table (家計簿機能)
-CREATE TABLE public.transactions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS public.transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     amount DECIMAL(12, 2) NOT NULL,
     currency TEXT DEFAULT 'JPY',
@@ -48,8 +49,8 @@ CREATE TABLE public.transactions (
 );
 
 -- Notes table (ノート機能)
-CREATE TABLE public.notes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS public.notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     title TEXT NOT NULL,
     content TEXT,
@@ -59,16 +60,12 @@ CREATE TABLE public.notes (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_conversations_user_id ON public.conversations(user_id);
-CREATE INDEX idx_conversations_updated_at ON public.conversations(updated_at DESC);
-CREATE INDEX idx_messages_conversation_id ON public.messages(conversation_id);
-CREATE INDEX idx_messages_timestamp ON public.messages(timestamp DESC);
-CREATE INDEX idx_transactions_user_id ON public.transactions(user_id);
-CREATE INDEX idx_transactions_date ON public.transactions(date DESC);
-CREATE INDEX idx_notes_user_id ON public.notes(user_id);
-
--- Vector similarity search index
-CREATE INDEX idx_messages_embedding ON public.messages USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON public.conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_updated_at ON public.conversations(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON public.messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON public.transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_date ON public.transactions(date DESC);
+CREATE INDEX IF NOT EXISTS idx_notes_user_id ON public.notes(user_id);
 
 -- Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

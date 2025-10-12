@@ -21,7 +21,7 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password)
-      router.push('/dashboard')
+      router.push('/chat')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ログインに失敗しました')
     } finally {
@@ -30,18 +30,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white px-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-black px-4">
+      <Card className="w-full max-w-md bg-gray-900 border-gray-800">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold text-center">ログイン</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-3xl font-bold text-center text-white">ログイン</CardTitle>
+          <CardDescription className="text-center text-gray-400">
             Faroにログインして、パーソナルCFOを利用
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
+              <label htmlFor="email" className="text-sm font-medium text-gray-300">
                 メールアドレス
               </label>
               <input
@@ -51,12 +51,12 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
+              <label htmlFor="password" className="text-sm font-medium text-gray-300">
                 パスワード
               </label>
               <input
@@ -66,19 +66,19 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
             </div>
 
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+              <div className="p-3 text-sm text-red-400 bg-red-950/50 border border-red-800 rounded-md">
                 {error}
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white"
               disabled={loading}
             >
               {loading ? 'ログイン中...' : 'ログイン'}
@@ -86,14 +86,14 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">アカウントをお持ちでない方は </span>
-            <Link href="/auth/signup" className="text-blue-600 hover:underline font-medium">
+            <span className="text-gray-400">アカウントをお持ちでない方は </span>
+            <Link href="/auth/signup" className="text-violet-400 hover:text-violet-300 hover:underline font-medium">
               新規登録
             </Link>
           </div>
 
           <div className="mt-4 text-center">
-            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
+            <Link href="/" className="text-sm text-gray-500 hover:text-gray-300">
               ← トップページに戻る
             </Link>
           </div>

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Your AI-Powered Financial Operating System",
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",

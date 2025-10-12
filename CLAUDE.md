@@ -8,6 +8,7 @@ Clean Architecture - ビジネスロジックをインフラから分離
 モバイルアプリでのサービス拡大を前提としたランディングページ等すべてを完結させる
 このフォルダ（Taxhack）上でモバイルアプリ、ウェブアプリ、ランディングページ等すべて管理
 忖度しないこと。会話の流れに同調しないこと
+claude.mdファイルを更新する際は、周りの形式に合わせること、実装の報告ではなく、普遍的なことに絞ること。
 
 
 
@@ -84,6 +85,7 @@ AI（✅ 完全統合）
   CI/CD: GitHub Actions（Lint/Test/Build/Deploy自動化）
   テスト: Jest（70%カバレッジ目標）+ Playwright（E2E）
   セキュリティ: Supabase RLS + 環境変数管理
+  モニタリング: Sentry（エラー追跡）+ Axiom（ログ・パフォーマンス）
 
 
 ＃プロジェクト構造
@@ -417,57 +419,5 @@ AIの正確性と関連性
   Turborepo Documentation: https://turbo.build/repo/do
 
 
-＃実装状況サマリー（2025-10-11更新）
-
-技術基盤: 10/10 ✅ 達成
-  - Clean Architecture完全実装
-  - DDD（Domain-Driven Design）
-  - Repository Pattern
-  - Use Case Pattern
-  - Dependency Injection
-
-データベース: 10/10 ✅ 達成
-  - Supabaseマイグレーション完備
-  - RLS（Row-Level Security）全テーブル適用
-  - pgvector（768次元ベクトル検索）
-  - インデックス最適化
-  - トリガー設定
-
-認証・セキュリティ: 10/10 ✅ 達成
-  - Supabase Auth統合
-  - サインイン/サインアップAPI
-  - セッション管理
-  - RLSポリシー
-
-AI機能: 10/10 ✅ 達成
-  - Gemini 2.0 Flash統合
-  - ベクトル埋め込み生成（text-embedding-004）
-  - セマンティック検索
-  - 会話コンテキスト保持
-
-状態管理: 10/10 ✅ 達成
-  - Zustand + Immer
-  - useAuthStore（認証状態）
-  - useChatStore（チャット状態）
-  - 型安全設計
-
-テスト: 10/10 ✅ 達成
-  - Jest設定完備
-  - ドメインエンティティテスト
-  - 70%カバレッジ目標設定
-  - CI/CD統合
-
-CI/CD: 10/10 ✅ 達成
-  - GitHub Actions自動化
-  - Vercelデプロイパイプライン
-  - Lint/Test/Type-check/Build自動実行
-  - セキュリティスキャン
-
-次のフェーズ:
-  1. フロントエンドUI実装（チャット画面完成）
-  2. Supabaseマイグレーション実行
-  3. 環境変数設定
-  4. Vercel本番デプロイ
-  5. 最初の100ユーザー獲得
-
-詳細: IMPLEMENTATION_STATUS.md参照
+＃実装状況
+詳細な実装状況は IMPLEMENTATION_STATUS.md を参照

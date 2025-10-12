@@ -119,3 +119,6 @@ __pycache__/
 
 # Learning data
 learning_data.json
+
+# Supabase temporary files
+supabase/.temp/

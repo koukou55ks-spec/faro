@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, Send, Paperclip, Camera, Mic, Code2,
   BarChart3, TrendingUp, Wallet, Brain, Plus, Settings,
-  Share2, Grid3x3, User as UserIcon, Shield, Layers,
-  BookOpen, Calculator, X as CloseIcon
+  Share2, Grid3x3, Shield, LayoutGrid,
+  BookOpen, Calculator, X as CloseIcon, StickyNote, Receipt
 } from 'lucide-react'
 // Workspace apps removed - redirect to dedicated pages
 
@@ -28,8 +28,8 @@ export default function HomePage() {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
-  const [showWorkspace, setShowWorkspace] = useState(false)
-  const [activeWorkspaceApp, setActiveWorkspaceApp] = useState<'notes' | 'kakeibo' | null>(null)
+  const [showApps, setShowApps] = useState(false)
+  const [activeApp, setActiveApp] = useState<'notes' | 'kakeibo' | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -146,7 +146,7 @@ export default function HomePage() {
 
   return (
     <div className="h-screen bg-black text-white flex overflow-hidden">
-      {/* Sidebar */}
+      {/* Sidebar - Hidden on mobile by default */}
       <AnimatePresence>
         {showSidebar && (
           <motion.div
@@ -154,7 +154,7 @@ export default function HomePage() {
             animate={{ x: 0 }}
             exit={{ x: -300 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="w-64 bg-gray-950 border-r border-gray-800 flex flex-col"
+            className="fixed sm:relative w-64 bg-gray-950 border-r border-gray-800 flex flex-col z-40 h-full"
           >
             <div className="p-3">
               <button className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-white text-black rounded-lg hover:bg-gray-100 transition-all font-medium">
@@ -188,6 +188,22 @@ export default function HomePage() {
                 <span>ダッシュボード</span>
               </button>
 
+              <button
+                onClick={() => router.push('/notes')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-all text-sm"
+              >
+                <StickyNote className="w-4 h-4" />
+                <span>ノート</span>
+              </button>
+
+              <button
+                onClick={() => router.push('/kakeibo')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-all text-sm"
+              >
+                <Receipt className="w-4 h-4" />
+                <span>家計簿</span>
+              </button>
+
               {user ? (
                 <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-all">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-xs font-bold">
@@ -213,8 +229,8 @@ export default function HomePage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="border-b border-gray-800 px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <header className="border-b border-gray-800 px-3 sm:px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setShowSidebar(!showSidebar)}
               className="p-2 hover:bg-gray-800 rounded-lg transition-all"
@@ -223,41 +239,41 @@ export default function HomePage() {
             </button>
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-violet-500" />
-              <span className="font-semibold text-lg">Faro</span>
-              <span className="text-xs px-2 py-0.5 bg-violet-500/20 text-violet-400 rounded-full">AI CFO</span>
+              <span className="font-semibold text-base sm:text-lg">Faro</span>
+              <span className="text-xs px-2 py-0.5 bg-violet-500/20 text-violet-400 rounded-full hidden sm:inline">AI CFO</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Workspace Toggle */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Apps Toggle */}
             <button
-              onClick={() => setShowWorkspace(!showWorkspace)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
-                showWorkspace
+              onClick={() => setShowApps(!showApps)}
+              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-lg transition-all ${
+                showApps
                   ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
                   : 'bg-gray-800 text-gray-400 hover:text-white'
               }`}
             >
-              <Layers className="w-4 h-4" />
-              <span className="text-xs font-medium">Workspace</span>
+              <LayoutGrid className="w-4 h-4" />
+              <span className="text-xs font-medium hidden sm:inline">アプリ</span>
             </button>
 
             {/* Expert Mode Toggle */}
             <button
               onClick={() => setExpertMode(!expertMode)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
+              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-lg transition-all ${
                 expertMode
                   ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
                   : 'bg-gray-800 text-gray-400 hover:text-white'
               }`}
             >
               <Shield className="w-4 h-4" />
-              <span className="text-xs font-medium">
-                {expertMode ? '法律順守モード' : 'エキスパート'}
+              <span className="text-xs font-medium hidden sm:inline">
+                {expertMode ? '法律順守' : 'Expert'}
               </span>
             </button>
 
-            <button className="p-2 hover:bg-gray-800 rounded-lg transition-all">
+            <button className="p-2 hover:bg-gray-800 rounded-lg transition-all hidden sm:block">
               <Share2 className="w-5 h-5 text-gray-400" />
             </button>
             <button className="p-2 hover:bg-gray-800 rounded-lg transition-all">
@@ -267,7 +283,7 @@ export default function HomePage() {
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-8">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-8">
           {messages.length === 0 ? (
             <div className="max-w-3xl mx-auto">
               <motion.div
@@ -289,7 +305,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-500">知識格差を是正し、誰もが富裕層の知恵にアクセスできる世界へ</p>
               </motion.div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[
                   { icon: <BarChart3 />, text: '支出パターンを分析', color: 'from-blue-500 to-cyan-500' },
                   { icon: <TrendingUp />, text: '貯蓄プランを作成', color: 'from-green-500 to-emerald-500' },
@@ -394,10 +410,10 @@ export default function HomePage() {
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-gray-800 px-6 py-4 bg-gray-950/50 backdrop-blur-xl">
+        <div className="border-t border-gray-800 px-3 sm:px-6 py-3 sm:py-4 bg-gray-950/50 backdrop-blur-xl">
           <div className="max-w-3xl mx-auto">
             <div className="relative bg-gray-900/80 rounded-2xl border border-gray-700 focus-within:border-violet-500/50 focus-within:shadow-lg focus-within:shadow-violet-500/20 transition-all">
-              <div className="flex items-end gap-2 px-4 py-3">
+              <div className="flex items-end gap-2 px-3 sm:px-4 py-2 sm:py-3">
                 <button className="p-2 hover:bg-gray-800 rounded-lg transition-all text-gray-400 hover:text-white">
                   <Paperclip className="w-5 h-5" />
                 </button>
@@ -425,18 +441,18 @@ export default function HomePage() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-3 px-4 pb-3 text-gray-500">
-                <button className="hover:text-gray-300 transition-all">
+              <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 pb-2 sm:pb-3 text-gray-500">
+                <button className="hover:text-gray-300 transition-all p-1">
                   <Camera className="w-4 h-4" />
                 </button>
-                <button className="hover:text-gray-300 transition-all">
+                <button className="hover:text-gray-300 transition-all p-1">
                   <Mic className="w-4 h-4" />
                 </button>
-                <button className="hover:text-gray-300 transition-all">
+                <button className="hover:text-gray-300 transition-all p-1 hidden sm:block">
                   <Code2 className="w-4 h-4" />
                 </button>
                 <div className="flex-1" />
-                <span className="text-xs">⌘ + K でコマンド</span>
+                <span className="text-xs hidden sm:inline">⌘ + K</span>
               </div>
             </div>
             <p className="text-center text-xs text-gray-600 mt-3">
@@ -446,9 +462,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Workspace Panel - Slide in from right */}
+      {/* Apps Panel - Slide in from right */}
       <AnimatePresence>
-        {showWorkspace && (
+        {showApps && (
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
@@ -456,14 +472,14 @@ export default function HomePage() {
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className="fixed right-0 top-0 h-screen w-full md:w-[600px] lg:w-[800px] bg-gray-950 border-l border-gray-800 z-50 flex flex-col"
           >
-            {/* Workspace Header */}
+            {/* Apps Header */}
             <div className="border-b border-gray-800 p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Layers className="w-6 h-6 text-blue-400" />
-                <h2 className="text-xl font-bold">Workspace</h2>
+                <LayoutGrid className="w-6 h-6 text-blue-400" />
+                <h2 className="text-xl font-bold">アプリ</h2>
               </div>
               <button
-                onClick={() => setShowWorkspace(false)}
+                onClick={() => setShowApps(false)}
                 className="p-2 hover:bg-gray-800 rounded-lg transition-all"
               >
                 <CloseIcon className="w-5 h-5" />
@@ -471,13 +487,13 @@ export default function HomePage() {
             </div>
 
             {/* App Selector */}
-            {!activeWorkspaceApp ? (
+            {!activeApp ? (
               <div className="flex-1 p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveWorkspaceApp('notes')}
+                    onClick={() => router.push('/notes')}
                     className="p-8 bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 rounded-2xl text-left hover:border-violet-500/50 transition-all group"
                   >
                     <div className="flex items-center gap-4 mb-4">
@@ -487,14 +503,14 @@ export default function HomePage() {
                     </div>
                     <h3 className="text-2xl font-bold mb-2">ノート</h3>
                     <p className="text-gray-400 text-sm">
-                      Notion風のメモ・ドキュメント管理。Faroが内容を理解してパーソナライズされた提案を行います。
+                      メモ・ドキュメント管理。Faroが内容を理解してパーソナライズされた提案を行います。
                     </p>
                   </motion.button>
 
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveWorkspaceApp('kakeibo')}
+                    onClick={() => router.push('/kakeibo')}
                     className="p-8 bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-2xl text-left hover:border-green-500/50 transition-all group"
                   >
                     <div className="flex items-center gap-4 mb-4">
@@ -513,41 +529,16 @@ export default function HomePage() {
                   <div className="flex items-start gap-3">
                     <Sparkles className="w-6 h-6 text-violet-400 mt-1" />
                     <div>
-                      <h4 className="font-semibold mb-2">Faroのパーソナライゼーション</h4>
+                      <h4 className="font-semibold mb-2">よく使う機能</h4>
                       <p className="text-sm text-gray-400">
-                        Workspaceで記録した情報をFaroが学習し、あなた専用のアドバイスを提供します。
-                        ノートの内容、支出パターン、目標設定を総合的に分析します。
+                        ノートと家計簿はサイドバーから素早くアクセスできます。
+                        その他の追加機能は今後このアプリパネルに追加されます。
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Back Button */}
-                <div className="p-4 border-b border-gray-800">
-                  <button
-                    onClick={() => setActiveWorkspaceApp(null)}
-                    className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-all text-sm"
-                  >
-                    ← 戻る
-                  </button>
-                </div>
-
-                {/* Redirect to dedicated pages */}
-                <div className="flex-1 overflow-hidden p-8">
-                  <p className="text-gray-400">
-                    このアプリは専用ページに移動しました
-                  </p>
-                  <button
-                    onClick={() => router.push(activeWorkspaceApp === 'notes' ? '/notes' : '/kakeibo')}
-                    className="mt-4 px-4 py-2 bg-violet-500 text-white rounded-lg"
-                  >
-                    専用ページを開く
-                  </button>
-                </div>
-              </div>
-            )}
+            ) : null}
           </motion.div>
         )}
       </AnimatePresence>

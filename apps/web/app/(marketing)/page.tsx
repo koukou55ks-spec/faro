@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Sparkles, TrendingUp, Shield, Brain, Zap, ArrowRight,
-  Check, Star, Users, BarChart3
+  Star, Users, BarChart3
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -40,7 +40,7 @@ export default function LandingPage() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-violet-600/20 via-transparent to-transparent" />
 
-        <div className="max-w-7xl mx-auto px-6 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -56,33 +56,33 @@ export default function LandingPage() {
               <Sparkles className="w-10 h-10" />
             </motion.div>
 
-            <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent leading-tight">
               Faro
             </h1>
 
-            <p className="text-2xl md:text-3xl text-gray-300 mb-4 font-medium">
+            <p className="text-xl sm:text-2xl md:text-3xl text-gray-300 mb-4 font-medium px-4">
               Your AI-Powered Financial Operating System
             </p>
 
-            <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto">
-              富裕層だけが知る財務知識を、AIで誰もがアクセス可能に。<br />
-              知識格差を是正し、すべての人に財務的自由を。
+            <p className="text-base sm:text-lg text-gray-400 mb-8 sm:mb-12 max-w-2xl mx-auto px-4">
+              富裕層だけが知る財務知識を、AIで誰もがアクセス可能に。<br className="hidden sm:block" />
+              <span className="sm:hidden"> </span>知識格差を是正し、すべての人に財務的自由を。
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
               <Button
                 onClick={() => router.push('/chat')}
                 size="lg"
-                className="bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white px-8 py-6 text-lg rounded-2xl"
+                className="bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-2xl w-full sm:w-auto"
               >
-                無料で始める <ArrowRight className="ml-2 w-5 h-5" />
+                無料で始める <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
 
               <Button
                 onClick={() => router.push('/workspace')}
                 size="lg"
                 variant="outline"
-                className="border-gray-700 hover:bg-gray-800 px-8 py-6 text-lg rounded-2xl"
+                className="border-gray-700 hover:bg-gray-800 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-2xl w-full sm:w-auto"
               >
                 Workspaceを見る
               </Button>
@@ -92,13 +92,13 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-gradient-to-b from-transparent to-gray-900/50">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center mb-16">
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-transparent to-gray-900/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 sm:mb-12 md:mb-16 px-4">
             なぜFaroが選ばれるのか
           </h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {features.map((feature, i) => (
               <motion.div
                 key={i}
@@ -120,9 +120,9 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
+      <section className="py-12 sm:py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 md:gap-8 text-center">
             {[
               { value: '10,000+', label: 'アクティブユーザー', icon: <Users /> },
               { value: '¥50億+', label: '最適化された資産', icon: <BarChart3 /> },
@@ -148,28 +148,28 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-b from-gray-900/50 to-transparent">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-6">
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-gray-900/50 to-transparent">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">
             財務の未来を、今すぐ体験
           </h2>
-          <p className="text-xl text-gray-400 mb-8">
+          <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-6 sm:mb-8 px-4">
             無料で始めて、AIパーソナルCFOの力を実感してください
           </p>
           <Button
             onClick={() => router.push('/chat')}
             size="lg"
-            className="bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white px-12 py-6 text-lg rounded-2xl"
+            className="bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 text-base sm:text-lg rounded-2xl mx-4"
           >
-            今すぐ無料で始める <ArrowRight className="ml-2 w-5 h-5" />
+            今すぐ無料で始める <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-12">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      <footer className="border-t border-gray-800 py-8 sm:py-10 md:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-violet-500" />
               <span className="font-bold text-xl">Faro</span>
