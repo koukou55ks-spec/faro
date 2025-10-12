@@ -284,15 +284,21 @@ export function logAPIRequest(
   duration: number,
   metadata?: Record<string, unknown>
 ) {
-  const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
-
-  logger?.log(level, `API ${method} ${path}`, {
+  const logData = {
     method,
     path,
     statusCode,
     duration,
     ...metadata,
-  });
+  };
+
+  if (statusCode >= 500) {
+    logger?.error(`API ${method} ${path}`, logData);
+  } else if (statusCode >= 400) {
+    logger?.warn(`API ${method} ${path}`, logData);
+  } else {
+    logger?.info(`API ${method} ${path}`, logData);
+  }
 }
 
 // ============================================
