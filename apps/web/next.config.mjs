@@ -74,7 +74,16 @@ const nextConfig = {
   },
 
   // Bundle analysis
-  webpack(config, { isServer }) {
+  webpack(config, { isServer, dir }) {
+    // Configure path aliases for Vercel deployment
+    const path = require('path')
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@/features': path.join(dir, 'src/features'),
+      '@/lib': path.join(dir, 'lib'),
+      '@/hooks': path.join(dir, 'hooks'),
+    }
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
