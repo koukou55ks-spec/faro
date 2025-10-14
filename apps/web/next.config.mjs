@@ -1,7 +1,43 @@
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+
+  // Webpack configuration for module resolution
+  webpack: (config, { isServer, dir }) => {
+    // Add module aliases
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@/features': path.resolve(__dirname, 'src/features'),
+      '@/lib': path.resolve(__dirname, 'lib'),
+      '@/hooks': path.resolve(__dirname, 'hooks'),
+      '@': path.resolve(__dirname),
+    }
+
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      }
+    }
+
+    // Enable tree shaking
+    config.optimization = {
+      ...config.optimization,
+      usedExports: true,
+      sideEffects: false,
+    }
+
+    return config
+  },
 
   // Performance optimizations
   compiler: {
@@ -71,36 +107,6 @@ const nextConfig = {
   images: {
     domains: ['tckfgrxuxkxysmpemplj.supabase.co'],
     formats: ['image/avif', 'image/webp'],
-  },
-
-  // Bundle analysis
-  webpack(config, { isServer, dir }) {
-    // Configure path aliases for Vercel deployment
-    const path = require('path')
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@/features': path.join(dir, 'src/features'),
-      '@/lib': path.join(dir, 'lib'),
-      '@/hooks': path.join(dir, 'hooks'),
-    }
-
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      }
-    }
-
-    // Enable tree shaking
-    config.optimization = {
-      ...config.optimization,
-      usedExports: true,
-      sideEffects: false,
-    }
-
-    return config
   },
 
   // PWA configuration
