@@ -29,8 +29,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
     console.error('[ErrorBoundary] Caught error:', error, errorInfo)
 
     // Send to error tracking service (Sentry, etc.)
-    if (typeof window !== 'undefined' && window.Sentry) {
-      window.Sentry.captureException(error, {
+    if (typeof window !== 'undefined' && (window as any).Sentry) {
+      (window as any).Sentry.captureException(error, {
         contexts: {
           react: {
             componentStack: errorInfo.componentStack,

@@ -1,4 +1,5 @@
-import { log as axiomLog } from 'next-axiom'
+// Axiom logging is optional - will be configured in production
+// import { log as axiomLog } from 'next-axiom'
 
 // Log levels
 export enum LogLevel {
@@ -36,18 +37,20 @@ class Logger {
   }
 
   private sendToAxiom(level: LogLevel, message: string, context?: LogContext) {
-    if (this.isProduction && typeof axiomLog === 'function') {
-      try {
-        axiomLog(level, message, context)
-      } catch (error) {
-        console.error('Failed to send log to Axiom:', error)
+    // Axiom logging will be configured in production
+    // Currently disabled to avoid build errors
+    // To enable: install next-axiom and uncomment the import at the top
+    if (this.isProduction) {
+      // For now, just log to console in production
+      if (this.isProduction) {
+        console.log(`[AXIOM] ${level}:`, message, context)
       }
     }
   }
 
   private sendToSentry(level: LogLevel, message: string, context?: LogContext) {
-    if (typeof window !== 'undefined' && window.Sentry) {
-      const sentry = window.Sentry
+    if (typeof window !== 'undefined' && (window as any).Sentry) {
+      const sentry = (window as any).Sentry
 
       switch (level) {
         case LogLevel.ERROR:
@@ -352,13 +355,13 @@ export function captureMessage(message: string, level: LogLevel = LogLevel.INFO,
 }
 
 export function setUser(userId: string, email?: string, username?: string) {
-  if (typeof window !== 'undefined' && window.Sentry) {
-    window.Sentry.setUser({ id: userId, email, username })
+  if (typeof window !== 'undefined' && (window as any).Sentry) {
+    (window as any).Sentry.setUser({ id: userId, email, username })
   }
 }
 
 export function clearUser() {
-  if (typeof window !== 'undefined' && window.Sentry) {
-    window.Sentry.setUser(null)
+  if (typeof window !== 'undefined' && (window as any).Sentry) {
+    (window as any).Sentry.setUser(null)
   }
 }

@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient(
@@ -30,7 +30,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const documentId = params.id
+    const { id: documentId } = await params
 
     // Get document to delete file from storage
     const { data: document } = await supabase

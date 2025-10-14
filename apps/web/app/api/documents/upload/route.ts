@@ -252,13 +252,16 @@ export async function POST(request: NextRequest) {
 
     // 5. Also add to collection_documents for backward compatibility
     if (collectionId) {
-      await supabase
+      const { error: collectionError } = await supabase
         .from('collection_documents')
         .insert({
           collection_id: collectionId,
           document_id: document.id
         })
-        .catch(err => console.log('[Upload] Collection mapping (optional):', err))
+
+      if (collectionError) {
+        console.log('[Upload] Collection mapping (optional):', collectionError)
+      }
     }
 
     // 6. Generate embeddings in background (non-blocking)

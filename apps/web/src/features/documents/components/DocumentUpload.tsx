@@ -81,7 +81,7 @@ export function DocumentUpload({ collectionId, authToken, onComplete }: Document
     // Upload files sequentially
     for (let i = 0; i < validFiles.length; i++) {
       try {
-        await uploadDocument(validFiles[i], authToken, collectionId)
+        await uploadDocument(authToken, validFiles[i], collectionId)
         setUploadingFiles(prev =>
           prev.map((item, idx) =>
             idx === i ? { ...item, status: 'success' } : item
@@ -142,7 +142,7 @@ export function DocumentUpload({ collectionId, authToken, onComplete }: Document
         const blob = new Blob([textContent], { type: 'text/plain' })
         const file = new File([blob], `${textTitle}.txt`, { type: 'text/plain' })
 
-        await uploadDocument(file, authToken, collectionId)
+        await uploadDocument(authToken, file, collectionId)
 
         // Clear form
         setTextContent('')

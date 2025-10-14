@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient(
@@ -30,7 +30,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const documentId = params.id
+    const { id: documentId } = await params
     const { collectionId } = await request.json()
 
     if (!collectionId) {
@@ -104,7 +104,7 @@ export async function POST(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient(
@@ -125,7 +125,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const documentId = params.id
+    const { id: documentId } = await params
     const { searchParams } = new URL(request.url)
     const collectionId = searchParams.get('collectionId')
 

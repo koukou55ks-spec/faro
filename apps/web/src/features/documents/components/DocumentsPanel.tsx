@@ -54,7 +54,7 @@ export function DocumentsPanel({ authToken, onDocumentSelect }: DocumentsPanelPr
 
   // Determine which data to use
   const collections = authToken ? authCollections : guestCollections
-  const documents = authToken ? authDocuments : guestDocuments
+  const documents: Document[] | GuestDocument[] = authToken ? authDocuments : guestDocuments
   const error = authToken ? authError : guestError
   const setError = authToken ? setAuthError : setGuestError
   const isLoading = authToken ? authLoading : false
@@ -68,17 +68,17 @@ export function DocumentsPanel({ authToken, onDocumentSelect }: DocumentsPanelPr
   }, [authToken])
 
   // Filter documents by selected collection and search query
-  const filteredDocuments = documents.filter(doc => {
-    const matchesCollection = !selectedCollectionId ||
-      (authToken
-        ? doc.collection_id === selectedCollectionId
-        : (doc as any).collectionId === selectedCollectionId)
-
-    const matchesSearch = !searchQuery ||
-      doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-
-    return matchesCollection && matchesSearch
-  })
+  const filteredDocuments: Document[] | GuestDocument[] = authToken
+    ? (documents as Document[]).filter(doc => {
+        const matchesCollection = !selectedCollectionId || doc.collection_id === selectedCollectionId
+        const matchesSearch = !searchQuery || doc.title.toLowerCase().includes(searchQuery.toLowerCase())
+        return matchesCollection && matchesSearch
+      })
+    : (documents as GuestDocument[]).filter(doc => {
+        const matchesCollection = !selectedCollectionId || doc.collectionId === selectedCollectionId
+        const matchesSearch = !searchQuery || doc.title.toLowerCase().includes(searchQuery.toLowerCase())
+        return matchesCollection && matchesSearch
+      })
 
   const handleCreateCollection = async () => {
     if (!newCollectionName.trim()) {

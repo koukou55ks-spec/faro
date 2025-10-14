@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient(
@@ -30,7 +30,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const collectionId = params.id
+    const { id: collectionId } = await params
     const { name, description, icon, parentId, isExpanded } = await request.json()
 
     // Verify collection belongs to user
@@ -134,7 +134,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createClient(
@@ -155,7 +155,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const collectionId = params.id
+    const { id: collectionId } = await params
 
     // Verify collection belongs to user
     const { data: existingCollection, error: fetchError } = await supabase

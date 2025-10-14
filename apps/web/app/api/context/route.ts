@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
  * const contextPrompt = formatContextForAI(contextData)
  * const aiResponse = await gemini.generateResponse(userMessage + '\n\n' + contextPrompt)
  */
-export function formatContextForAI(context: ContextResult): string {
+function formatContextForAI(context: ContextResult): string {
   const parts: string[] = []
 
   if (context.notes.length > 0) {

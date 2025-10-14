@@ -53,9 +53,9 @@ export class SendMessageUseCase {
           content,
           userId,
           0.6, // threshold
-          3,   // limit
-          sourceSelection // NEW: Pass source selection options
+          3    // limit
         );
+        // TODO: Use sourceSelection when IContextService is updated to support it
         contextPrompt = this.contextService.formatContextForPrompt(userContext);
       } catch (error) {
         console.warn('[SendMessageUseCase] Failed to retrieve context:', error);
