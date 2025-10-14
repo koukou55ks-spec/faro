@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { Menu, Plus, Mic, Send, Loader2, Sparkles, X, ChevronRight, ChevronDown, FileText, Wallet, Upload, TrendingUp } from 'lucide-react'
+import { Menu, Plus, Mic, Send, Loader2, Sparkles, X, ChevronRight, ChevronDown, FileText, Wallet, Upload, TrendingUp, MessageSquare, Trash2 } from 'lucide-react'
 import { NotesPanel } from '@/src/features/notes/components/NotesPanel'
 import { ChatPanel } from '@/src/features/chat/components/ChatPanel'
+import { useChatStore } from '@/src/features/chat/stores/chatStore'
 import { useGuestNotesStore } from '@/src/features/notes/stores/guestNotesStore'
 import { SourceSelector } from '@/src/features/documents/components/SourceSelector'
 import { DocumentsPanel } from '@/src/features/documents/components/DocumentsPanel'
@@ -27,26 +28,10 @@ export default function FaroMainPage() {
   const { notes: guestNotes } = useGuestNotesStore()
   const { fetchDocuments, fetchCollections } = useDocumentsStore()
   const { viewMode, isSidebarOpen, setViewMode, setSidebarOpen, toggleSidebar } = useAppStore()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [inputMessage, setInputMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
-  const [expertMode, setExpertMode] = useState(false)
-  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false)
+  const { conversations, currentConversationId, createConversation, setCurrentConversation, deleteConversation } = useChatStore()
+  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [sourceSelection, setSourceSelection] = useState<{
-    documents: string[]
-    collections: string[]
-    includeNotes: boolean
-    includeMessages: boolean
-  }>({
-    documents: [],
-    collections: [],
-    includeNotes: true,
-    includeMessages: true,
-  })
   const [authToken, setAuthToken] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const isGuest = !user
 
@@ -84,22 +69,12 @@ export default function FaroMainPage() {
     }
   }, [user])
 
-  // 初回挨拶 (MVP: user check removed for guest access)
+  // 初回会話作成
   useEffect(() => {
-    if (messages.length === 0) {
-      const greetingMessage: Message = {
-        role: 'assistant',
-        content: `こんにちは！\n\n私はFaro、あなたのパーソナルCFOです。\n\nお金のこと、何でも相談してください。`,
-        timestamp: new Date()
-      }
-      setMessages([greetingMessage])
+    if (conversations.length === 0 && viewMode === 'chat') {
+      createConversation()
     }
   }, [])
-
-  // Auto scroll
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
 
   // 時刻更新
   useEffect(() => {
@@ -107,71 +82,29 @@ export default function FaroMainPage() {
     return () => clearInterval(timer)
   }, [])
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return
-
-    const userMessage: Message = {
-      role: 'user',
-      content: inputMessage,
-      timestamp: new Date()
-    }
-
-    setMessages(prev => [...prev, userMessage])
-    setInputMessage('')
-    setIsLoading(true)
-
-    try {
-      const requestBody: any = {
-        message: inputMessage,
-        userId: user?.id,
-        appContext: 'main', // メイン画面
-        sourceSelection: sourceSelection, // Add source selection
-        expertMode: expertMode
-      }
-
-      // Add guest notes to request if user is guest
-      if (isGuest && guestNotes.length > 0) {
-        console.log('[App Page] Adding', guestNotes.length, 'guest notes to request');
-        requestBody.guestNotes = guestNotes
-      }
-
-      console.log('[App Page] Sending request with source selection:', requestBody);
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      })
-
-      if (!response.ok) throw new Error('Failed to send message')
-
-      const data = await response.json()
-
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: data.response,
-        timestamp: new Date(),
-        expertMode: expertMode
-      }
-
-      setMessages(prev => [...prev, assistantMessage])
-    } catch (error) {
-      console.error('Error sending message:', error)
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: '申し訳ありません。エラーが発生しました。もう一度お試しください。',
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
+  // 新規チャット作成
+  const handleNewChat = () => {
+    createConversation()
+    setViewMode('chat')
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false)
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
+  // 会話選択
+  const handleSelectConversation = (convId: string) => {
+    setCurrentConversation(convId)
+    setViewMode('chat')
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false)
+    }
+  }
+
+  // 会話削除
+  const handleDeleteConversation = (convId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (confirm('この会話を削除しますか？')) {
+      deleteConversation(convId)
     }
   }
 
@@ -230,14 +163,8 @@ export default function FaroMainPage() {
           {/* 新規チャット */}
           <div className="p-4">
             <button
-              onClick={() => {
-                setMessages([])
-                setViewMode('chat')
-                if (window.innerWidth < 768) {
-                  setSidebarOpen(false)
-                }
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all bg-faro-purple hover:bg-faro-purple-dark text-white"
+              onClick={handleNewChat}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg"
             >
               <Plus className="w-5 h-5" />
               新規チャット
@@ -251,23 +178,44 @@ export default function FaroMainPage() {
                 onClick={() => setIsChatHistoryOpen(!isChatHistoryOpen)}
                 className="w-full flex items-center justify-between text-sm font-semibold mb-3 text-gray-600 hover:text-gray-900 transition-colors"
               >
-                <span>チャット履歴</span>
+                <span>💬 チャット履歴 ({conversations.length})</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${isChatHistoryOpen ? 'rotate-180' : ''}`} />
               </button>
               {isChatHistoryOpen && (
-                <div className="space-y-2">
-                  {[
-                    '投資について相談',
-                    '確定申告の準備',
-                    '家計簿の分析',
-                  ].map((title, i) => (
-                    <button
-                      key={i}
-                      className="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-200 text-gray-700"
-                    >
-                      {title}
-                    </button>
-                  ))}
+                <div className="space-y-1">
+                  {conversations.length === 0 ? (
+                    <p className="text-xs text-gray-500 text-center py-4">まだ会話がありません</p>
+                  ) : (
+                    conversations.map((conv) => (
+                      <button
+                        key={conv.id}
+                        onClick={() => handleSelectConversation(conv.id)}
+                        className={`group w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
+                          conv.id === currentConversationId
+                            ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-l-2 border-purple-500 font-medium'
+                            : 'hover:bg-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                            conv.id === currentConversationId ? 'text-purple-600' : 'text-gray-400'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate text-gray-900">{conv.title}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {new Date(conv.updatedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                            </p>
+                          </div>
+                          <button
+                            onClick={(e) => handleDeleteConversation(conv.id, e)}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                          </button>
+                        </div>
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>
