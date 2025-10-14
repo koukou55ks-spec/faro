@@ -30,9 +30,19 @@ export const useNotesStore = create<NotesStore>((set) => ({
       if (!response.ok) throw new Error('Failed to load notes')
 
       const data = await response.json()
-      set({ notes: data.data || [] })
+      const notes = (data.notes || []).map((note: any) => ({
+        id: note.id,
+        userId: note.user_id,
+        title: note.title,
+        content: note.content,
+        tags: note.tags || [],
+        createdAt: new Date(note.created_at),
+        updatedAt: new Date(note.updated_at),
+      }))
+      set({ notes })
     } catch (error) {
       console.error('Load notes error:', error)
+      set({ notes: [] })
     } finally {
       set({ isLoading: false })
     }
@@ -45,7 +55,12 @@ export const useNotesStore = create<NotesStore>((set) => ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, title, content, tags }),
       })
-      if (!response.ok) throw new Error('Failed to create note')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create note')
+      }
+      const data = await response.json()
+      console.log('Note created:', data.note)
     } catch (error) {
       console.error('Create note error:', error)
       throw error
@@ -54,12 +69,17 @@ export const useNotesStore = create<NotesStore>((set) => ({
 
   updateNote: async (noteId: string, userId: string, title: string, content: string, tags: string[]) => {
     try {
-      const response = await fetch(`/api/notes/${noteId}`, {
+      const response = await fetch('/api/notes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, title, content, tags }),
+        body: JSON.stringify({ id: noteId, userId, title, content, tags }),
       })
-      if (!response.ok) throw new Error('Failed to update note')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update note')
+      }
+      const data = await response.json()
+      console.log('Note updated:', data.note)
     } catch (error) {
       console.error('Update note error:', error)
       throw error
@@ -68,10 +88,13 @@ export const useNotesStore = create<NotesStore>((set) => ({
 
   deleteNote: async (noteId: string, userId: string) => {
     try {
-      const response = await fetch(`/api/notes/${noteId}?userId=${userId}`, {
+      const response = await fetch(`/api/notes?id=${noteId}&userId=${userId}`, {
         method: 'DELETE',
       })
-      if (!response.ok) throw new Error('Failed to delete note')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete note')
+      }
     } catch (error) {
       console.error('Delete note error:', error)
       throw error

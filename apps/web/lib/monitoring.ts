@@ -305,15 +305,14 @@ export function logAPIRequest(
 // Cleanup
 // ============================================
 
-if (typeof window === 'undefined' && typeof process !== 'undefined' && process.on) {
-  // Node.js環境のみ（Edge Runtimeでは実行しない）
+// Node.js環境のみ（Edge Runtimeでは実行しない）
+if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'nodejs') {
   try {
     process.on('beforeExit', () => {
       logger?.destroy();
     });
   } catch (error) {
-    // Edge Runtimeでは無視
-    console.warn('process.on is not available in this environment');
+    console.warn('Cleanup handler setup failed:', error);
   }
 }
 

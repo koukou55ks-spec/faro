@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useChatStore } from '../stores/chatStore'
-import { marked } from 'marked'
+import { useGuestNotesStore } from '../../notes/stores/guestNotesStore'
+import { MarkdownRenderer } from './MarkdownRenderer'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -17,9 +18,12 @@ interface ChatPanelProps {
 
 export function ChatPanel({ userId }: ChatPanelProps) {
   const { messages, addMessage, clearMessages, isLoading, setLoading } = useChatStore()
+  const { notes: guestNotes } = useGuestNotesStore()
   const [input, setInput] = useState('')
   const [expertMode, setExpertMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const isGuest = !userId || userId === 'guest' || userId === 'anonymous'
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -35,33 +39,102 @@ export function ChatPanel({ userId }: ChatPanelProps) {
     }
 
     addMessage(userMessage)
+    const userInput = input
     setInput('')
     setLoading(true)
 
     try {
-      // Use Clean Architecture API
-      const response = await fetch('/api/v2/chat', {
+      // Use Chat API with streaming
+      const requestBody: any = {
+        message: userInput,
+        userId: userId || 'anonymous',
+        expertMode: expertMode,
+        stream: true, // Enable streaming
+        sourceSelection: {
+          documents: [],
+          collections: [],
+          includeNotes: true,
+          includeMessages: true
+        }
+      }
+
+      // Add guest notes to request if user is guest
+      if (isGuest && guestNotes.length > 0) {
+        console.log('[ChatPanel] Adding', guestNotes.length, 'guest notes to request');
+        requestBody.guestNotes = guestNotes
+      }
+
+      console.log('[ChatPanel] Sending streaming request');
+
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId: 'default', // TODO: Get from context
-          userId: userId || 'anonymous',
-          message: input,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) throw new Error('API request failed')
 
-      const data = await response.json()
+      // Handle streaming response
+      if (response.headers.get('content-type')?.includes('text/event-stream')) {
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+        let accumulatedContent = ''
 
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: data.data.assistantMessage.content,
-        timestamp: new Date().toISOString(),
-        expertMode: expertMode
+        // Create placeholder message
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: '',
+          timestamp: new Date().toISOString(),
+          expertMode: expertMode
+        }
+        addMessage(assistantMessage)
+
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            const chunk = decoder.decode(value)
+            const lines = chunk.split('\n')
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6)
+                if (data === '[DONE]') {
+                  break
+                }
+                try {
+                  const parsed = JSON.parse(data)
+                  if (parsed.content) {
+                    accumulatedContent += parsed.content
+                    // Update the last message in the store
+                    const updatedMessage: Message = {
+                      ...assistantMessage,
+                      content: accumulatedContent
+                    }
+                    // Replace last message
+                    const currentMessages = useChatStore.getState().messages
+                    const newMessages = [...currentMessages.slice(0, -1), updatedMessage]
+                    useChatStore.setState({ messages: newMessages })
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Fallback to non-streaming
+        const data = await response.json()
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: data.response || data.data?.assistantMessage?.content || 'No response',
+          timestamp: new Date().toISOString(),
+          expertMode: expertMode
+        }
+        addMessage(assistantMessage)
       }
-
-      addMessage(assistantMessage)
     } catch (error) {
       console.error('Error sending message:', error)
       const errorMessage: Message = {
@@ -116,49 +189,49 @@ export function ChatPanel({ userId }: ChatPanelProps) {
         )}
 
         {messages.map((msg, idx) => (
-          <div key={idx} className={`flex gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+          <div
+            key={idx}
+            className={`flex gap-4 mb-8 animate-fadeIn ${msg.role === 'user' ? 'justify-end' : ''}`}
+          >
             {msg.role === 'assistant' && (
-              <div className="text-4xl w-12 h-12 flex items-center justify-center flex-shrink-0">
-                💼
+              <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                <div className="text-2xl">💼</div>
               </div>
             )}
             <div className={`flex-1 max-w-3xl ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
               <div
-                className={`px-5 py-3 rounded-xl ${
+                className={`px-6 py-4 rounded-2xl ${
                   msg.role === 'user'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary text-secondary-foreground'
                 }`}
               >
-                <div
-                  className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: marked(msg.content) }}
-                />
+                <MarkdownRenderer content={msg.content} />
                 {msg.expertMode && (
-                  <span className="inline-block mt-2 px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-semibold">
+                  <span className="inline-block mt-3 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
                     ⚖️ エキスパートモード
                   </span>
                 )}
               </div>
             </div>
             {msg.role === 'user' && (
-              <div className="text-4xl w-12 h-12 flex items-center justify-center flex-shrink-0">
-                👤
+              <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                <div className="text-2xl">👤</div>
               </div>
             )}
           </div>
         ))}
 
         {isLoading && (
-          <div className="flex gap-4 mb-6">
-            <div className="text-4xl w-12 h-12 flex items-center justify-center flex-shrink-0">
-              💼
+          <div className="flex gap-4 mb-8 animate-fadeIn">
+            <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+              <div className="text-2xl">💼</div>
             </div>
             <div className="flex-1">
-              <div className="bg-secondary px-5 py-3 rounded-xl inline-flex gap-1">
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+              <div className="bg-secondary px-6 py-4 rounded-2xl inline-flex gap-1.5">
+                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
               </div>
             </div>
           </div>

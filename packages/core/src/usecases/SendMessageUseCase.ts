@@ -1,14 +1,28 @@
 import { MessageEntity } from '../domain/Message';
 import { IConversationRepository } from '../interfaces/IConversationRepository';
 import { IAIService } from '../interfaces/IAIService';
+import { IContextService } from '../interfaces/IContextService';
+
+export interface SourceSelectionOptions {
+  selectedDocuments?: string[]
+  selectedCollections?: string[]
+  includeNotes?: boolean
+  includeMessages?: boolean
+}
 
 export class SendMessageUseCase {
   constructor(
     private conversationRepo: IConversationRepository,
-    private aiService: IAIService
+    private aiService: IAIService,
+    private contextService?: IContextService // Optional for backward compatibility
   ) {}
 
-  async execute(conversationId: string, userId: string, content: string): Promise<MessageEntity> {
+  async execute(
+    conversationId: string,
+    userId: string,
+    content: string,
+    sourceSelection?: SourceSelectionOptions
+  ): Promise<MessageEntity> {
     // Create user message
     const userMessage = MessageEntity.create({
       userId,
@@ -31,8 +45,27 @@ export class SendMessageUseCase {
       content: msg.content
     }));
 
-    // Generate AI response
-    const aiResponse = await this.aiService.generateResponse(content, history);
+    // Retrieve user context (notes, past messages, documents) if context service is available
+    let contextPrompt = '';
+    if (this.contextService) {
+      try {
+        const userContext = await this.contextService.retrieveContext(
+          content,
+          userId,
+          0.6, // threshold
+          3,   // limit
+          sourceSelection // NEW: Pass source selection options
+        );
+        contextPrompt = this.contextService.formatContextForPrompt(userContext);
+      } catch (error) {
+        console.warn('[SendMessageUseCase] Failed to retrieve context:', error);
+        // Continue without context if retrieval fails
+      }
+    }
+
+    // Generate AI response with context
+    const promptWithContext = content + contextPrompt;
+    const aiResponse = await this.aiService.generateResponse(promptWithContext, history);
 
     // Create assistant message
     const assistantMessage = MessageEntity.create({

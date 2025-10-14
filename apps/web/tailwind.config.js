@@ -9,6 +9,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Faro Brand Colors - Modern Purple Theme
+        'faro-purple': '#8b5cf6',     // Primary: モダンな紫
+        'faro-purple-light': '#a78bfa', // Light purple
+        'faro-purple-dark': '#7c3aed',  // Dark purple
+        'faro-bg': '#ffffff',         // White background
+        'faro-text': '#1f2937',       // Dark text
+
+        // Shadcn UI compatibility
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -93,6 +101,7 @@ module.exports = {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.5s ease-out',
         'fade-out': 'fade-out 0.5s ease-out',
+        'fadeIn': 'fade-in 0.3s ease-out',
         'shimmer': 'shimmer 2s linear infinite',
         'gradient-x': 'gradient-x 3s ease infinite',
         'gradient-y': 'gradient-y 3s ease infinite',
@@ -109,5 +118,8 @@ module.exports = {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    require('@tailwindcss/typography'),
+  ],
 }

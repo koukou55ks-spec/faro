@@ -11,6 +11,35 @@ Clean Architecture - ビジネスロジックをインフラから分離
 claude.mdファイルを更新する際は、周りの形式に合わせること、実装の報告ではなく、普遍的なことに絞ること。
 
 
+＃実装前の強制チェックリスト（新機能・新API実装時は必ず実行）
+以下を全て確認してからコードを書き始めること。1つでもスキップしたら実装を中止すること。
+
+□ 1. 既存の類似実装を確認（例：新しいAPI → /api/chat, /api/documents/upload を読む）
+□ 2. CLAUDE.mdの該当セクションを確認
+    - 新しいAPI実装 → 「開発モード時の認証スキップ」セクションを読む
+    - 新しいUI → 「UI、UXの思想」セクションを読む
+    - エラー処理 → 「エラー対応の絶対原則」セクションを読む
+□ 3. 既存パターンを踏襲（車輪の再発明をしない）
+□ 4. 不明点があれば必ず質問（推測で実装しない）
+
+このチェックリストを無視して実装した場合、CLAUDE.mdの意味がなくなる。
+AIは毎回ゼロからスタートするため、「気をつけます」という意識では不十分。
+構造的にルールを守る仕組みが必要。
+
+＃ワークフローファイル構造（重要）
+.workflow/ディレクトリにすべてのワークフロー管理ファイルを集約
+
+  WORKFLOW.md: メタ管理（全ワークフローの一覧・目的・効果）
+  STATUS.md: 現状スナップショット（AI自動生成）
+  NEXT.md: 次のタスクTop 3（AI自動管理）
+  SESSION_LOG.md: セッション記録（詳細履歴）
+  DECISIONS.md: 技術的決定ログ（重要決定のみ）
+  DEBT.md: 技術的負債追跡（TODO/FIXME/HACK）
+  README.md: 各ファイルの役割説明
+
+詳細は .workflow/README.md を参照
+
+
 
 ＃創業者の思想
 AIの力をフル活用して一人で巨大企業をつくりあげる
@@ -57,6 +86,18 @@ Privacy first （プライバシーは基本）
 専門家から受けるようなアドバイスや金融知識をfaroとの対話を通して受けることができる。
 従来の家計簿アプリなどをはじめとする金融アプリの機能をすべて1つのアプリ上に搭載することで、ユーザーのコンテキストを理解したうえでパーソナルAIであるfaroがユーザーの質問に答えたり、能動的にユーザーにアドバイスを行う。
 
+＃Faroの本質的価値（最重要）
+Context is everything - すべてのデータをAIが理解
+  Faroの差別化要因:
+    - ノート、家計簿、取引履歴、会話履歴すべてをAIが把握
+    - ユーザーの金融プロファイルを完全理解した上でアドバイス
+    - 単なるチャットボットではなく、真のパーソナルCFO
+
+  技術的実現方法:
+    - すべてのユーザーデータをベクトル化（Gemini Embeddings）
+    - セマンティック検索で関連情報を自動取得
+    - 統合コンテキストをAIに渡してパーソナライズ回答生成
+
 
 ＃技術スタック
 
@@ -89,77 +130,19 @@ AI（✅ 完全統合）
 
 
 ＃プロジェクト構造
-
-faro/
-├── apps/
-│   ├── web/                    Next.js 15 Webアプリ
-│   │   ├── app/                App Router
-│   │   │   ├── api/            バックエンドAPIルート
-│   │   │   ├── (app)/          保護されたページ（認証必須）
-│   │   │   ├── (auth)/         ログイン/サインアップ
-│   │   │   ├── (legal)/        利用規約、プライバシーポリシー
-│   │   │   └── (marketing)/    ランディングページ
-│   │   ├── components/         UIコンポーネント
-│   │   ├── lib/                アプリ固有ロジック
-│   │   └── types/              型定義
-│   │
-│   └── mobile/                 React Native（計画中）
-│
-├── packages/
-│   ├── core/                   ✅ ビジネスロジック（DDD）完全実装
-│   │   ├── domain/             エンティティ（Message, Conversation）
-│   │   ├── usecases/           ユースケース（SendMessage, CreateConversation）
-│   │   ├── interfaces/         リポジトリ/サービスインターフェース
-│   │   └── __tests__/          単体テスト（Jest、70%カバレッジ目標）
-│   │
-│   ├── infrastructure/         ✅ 外部サービス統合完全実装
-│   │   ├── database/           SupabaseConversationRepository
-│   │   ├── ai/                 GeminiService (2.0 Flash + Embeddings)
-│   │   └── vector/             VectorSearchService (pgvector類似度検索)
-│   │
-│   ├── ui/                     デザインシステム（Web/Mobile共通）
-│   │   └── design-system/      トークン（色、スペーシング、タイポグラフィ）
-│   │
-│   ├── shared/                 共有ユーティリティ
-│   │   ├── utils/              通貨、日付、バリデーション
-│   │   ├── types/              共通型定義
-│   │   └── constants/          アプリ定数
-│   │
-│   └── ai-agent/               AIエージェント
-│       ├── agents/             FinancialAdvisor、TaxAdvisor
-│       ├── prompts/            プロンプトテンプレート
-│       └── tools/              エージェントツール
-│
-├── supabase/
-│   └── migrations/             ✅ データベーススキーマ完全実装
-│       └── 20250101000000_initial_schema.sql  (RLS + pgvector + インデックス)
-│
-├── experiments/                 実験的機能（本番外）
-│   ├── README.md               実験管理ガイド
-│   └── [実験名]/               各実験ディレクトリ
-│       ├── README.md           実験ドキュメント
-│       └── ...                 実験コード
-│
-├── docs/
-│   ├── ARCHITECTURE.md         アーキテクチャ概要
-│   ├── EXPERIMENTS.md          実験管理ドキュメント
-│   └── 戦略ドキュメント         （DISTRIBUTION_STRATEGY.md等）
-│
-├── scripts/                    開発スクリプト
-├── .github/workflows/          ✅ CI/CD完全実装
-│   ├── ci.yml                  Lint/Test/Type-check/Build
-│   ├── deploy.yml              Vercel自動デプロイ
-│   └── security.yml            セキュリティスキャン
-│
-├── pnpm-workspace.yaml         モノレポ設定
-├── turbo.json                  ビルドパイプライン
-├── CLAUDE.md                   このファイル（AI指示書）
-└── IMPLEMENTATION_STATUS.md    ✅ 実装状況レポート（10/10達成）
+apps/web: Next.js 15 + App Router
+apps/mobile: React Native + Expo（計画中）
+packages/core: ビジネスロジック（Clean Architecture、外部依存ゼロ）
+packages/infrastructure: Supabase/Gemini統合
+packages/ui: デザインシステム（Web/Mobile共通）
+supabase/migrations: DBスキーマ（RLS + pgvector）
 
 
 ＃UI、UXの思想
 世界トップレベルのモダンな設計
-アクセシビリティを核に据える
+アクセシビリティを核に据えるい
+新機能や新しいデザインの導入時には、pc,モバイルの両方に対応するuiにすること
+
 
 
 
@@ -174,7 +157,7 @@ faro/
   家計簿: AIパワード家計簿管理
   ワークスペース: 統合3パネルワークスペース
 
-ルート構造
+ルート構造（✅ 統一アプリ設計）
 
 パブリックルート
   / - ランディングページ
@@ -183,10 +166,14 @@ faro/
   /terms, /privacy, /refund - 法的ページ
 
 保護されたルート（認証必須）
-  /chat - メインチャットインターフェース
-  /workspace - 統合ワークスペース
-  /faro - シンプルモバイルチャット
-  /kakeibo - AI家計簿
+  /app - メインアプリ（統合UI）
+    ├─ チャット機能（デフォルト表示）
+    ├─ サイドバー（新規チャット、履歴、ノート、家計簿）
+    ├─ ダーク/ライトモード切り替え
+    └─ リアルタイム時刻表示
+
+  ※ 他のURL（/chat、/faro、/workspace等）は廃止
+  ※ 全機能を /app に統合（Notion、Linear方式）
 
 
 ＃開発
@@ -385,6 +372,337 @@ AIの正確性と関連性
 プラットフォームの拡張性（Web → モバイル → エコシステム）
 
 
+＃開発ワークフロー（最重要）
+
+ワークフロー管理の原則
+  ワークフローは常に進化する:
+    - 現在のベストが将来のベストではない
+    - 新しいワークフローは必ずWORKFLOW.mdに言語化
+    - 月1回レビュー、不要なものは廃止
+    - すべてのワークフローに「廃止条件」を設定
+
+  WORKFLOW.mdの役割:
+    - 現在採用しているワークフロー一覧
+    - 各ワークフローの目的・フロー・効果を記録
+    - 進化履歴を追跡
+    - 廃止済みワークフローも記録（学びとして）
+
+  更新タイミング:
+    - 新規ワークフロー追加時: 即座にWORKFLOW.mdに記録
+    - 既存改善時: 該当セクションを更新
+    - 廃止時: 「廃止済み」セクションに移動
+
+自動ステータス管理（AI完全自動化）
+  セッション開始時の必須アクション:
+    1. SESSION_LOG.mdの最新エントリを読む（前回の続きを把握）
+    2. STATUS.md自動生成（git log + git status + サーバー状態 + NEXT.mdを統合）
+    3. ユーザーに前回の続きを確認
+
+  セッション終了時の必須アクション:
+    1. SESSION_LOG.mdに今日のセッションを記録
+       - Goal（何を達成しようとしたか）
+       - What happened（実際に何が起きたか）
+       - Decisions made（技術的決定）
+       - Blockers（妨げになったこと）
+       - Time breakdown（時間配分）
+       - Next session（次回やること）
+       - Learnings（学び：✅成功、❌失敗）
+       - Code changes（変更ファイル）
+    2. 未完了タスクをNEXT.mdに保存
+    3. STATUS.md更新
+    4. 全てコミット
+
+  ルール: AIが全て自動管理、ユーザーは実装に集中
+
+質問駆動開発（QDD: Question-Driven Development）
+  実装前の必須確認フロー:
+    1. ユーザーからタスクを受け取る
+    2. 不明点・曖昧な点をリストアップ
+    3. 具体的な質問を作成（5W1H）
+    4. ユーザーに質問して回答を得る
+    5. 全回答を確認してから実装開始
+    6. 実装中に新たな不明点が出たら即座に質問
+
+  質問の例:
+    - このデータはどこに保存する？（DB/localStorage/メモリ）
+    - ゲストユーザーも使える？（Y/N）
+    - エラー時のUXは？（アラート/トースト/インライン）
+    - モバイルでも動く必要がある？（Y/N）
+    - 既存の機能との関係は？（独立/統合/置き換え）
+
+  禁止事項（絶対厳守）:
+    - 推測で実装（「たぶんこうだろう」は禁止）
+    - ユーザーの承認なしで実装開始
+    - 質問をスキップ
+    - 曖昧な要件のまま進める
+
+URL設計原則
+  統一アプリアプローチ: 全機能を /app に集約
+  理由:
+    - 一人開発に最適（1つのファイルを完璧に磨く）
+    - 世界トップアプリの標準（Notion、Linear、Figma）
+    - ページ遷移なし、サクサク動く
+    - 保守性が高い（バグ修正も機能追加も1箇所）
+
+  現在のURL構造:
+    / → ランディングページ
+    /app → メインアプリ（チャット、家計簿、ノート統合）
+    /auth/* → 認証ページ
+
+  禁止事項:
+    - 新しいページを無闇に作らない
+    - URLを増やさない（/chat、/v2/chat など）
+    - 既存の /app を修正・拡張する
+
+開発の黄金ルール
+  1. 80%ルール: 80%の完成度で次へ進む（完璧主義を避ける）
+  2. 既存ファイル優先: 新規作成より既存ページを改善
+  3. 速度重視: PMF達成が最優先、細部は後で磨く
+  4. 1つずつ完璧に: 複数の機能を中途半端に作らない
+
+開発モード時の認証スキップ（開発効率化）
+  原則: 開発環境では認証を必須としない
+  理由:
+    - 毎回ログインする手間を省き、開発速度を最大化
+    - 機能テストに集中できる
+    - 一人開発では認証フローのテストは後回しでOK
+
+  実装方針（最優先: ゲストモード + localStorage）:
+    - **新機能実装時は必ずゲストモード優先で実装**
+    - データベース不要、即座にテスト可能
+    - localStorage + Zustand + persist middleware で永続化
+    - 認証後も同じUIで動作するように設計
+    - マイグレーションやDB設定を待たずに機能開発できる
+    - 開発環境（NODE_ENV=development）で認証をスキップ
+    - 本番環境では厳格な認証を維持
+    - モックユーザーを使用してSupabase操作を可能にする
+
+  実装パターン（API Routes）:
+    ```typescript
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    let user: any = null
+
+    if (!isDevelopment) {
+      // Production: strict auth required
+      if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const { data: { user: authUser } } = await supabase.auth.getUser(token)
+      if (!authUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      user = authUser
+    } else {
+      // Development: allow guest with mock user
+      if (token) {
+        const { data: { user: authUser } } = await supabase.auth.getUser(token)
+        user = authUser
+      }
+      if (!user) {
+        user = { id: 'dev-guest-user', email: 'guest@localhost' }
+      }
+    }
+    ```
+
+  動的インポートの活用:
+    - pdf-parse, mammothなどのNode.js専用パッケージは動的インポート
+    - 理由: モジュール初期化時のファイルシステムエラーを回避
+    - パターン: `const pdfParse = (await import('pdf-parse')).default`
+
+  適用機能:
+    - ドキュメント機能: localStorageに保存（guestDocumentsStore） ✅
+    - ノート機能: localStorageに保存（guestNotesStore） ✅
+    - チャット機能: ゲスト対応済み ✅
+
+  ゲストモードの実装パターン（新機能実装時の必須手順）:
+    1. ゲスト用ストアを作成:
+       - ファイル名: `useGuestXXXStore.ts`
+       - Zustand + persist middleware使用
+       - localStorage に永続化
+       - 例: `useGuestDocumentsStore`, `useGuestNotesStore`
+
+    2. フロントエンドで認証トークンの有無で分岐:
+       ```typescript
+       const authToken = useAuthStore(state => state.token)
+       const { items: authItems } = useXXXStore()
+       const { items: guestItems } = useGuestXXXStore()
+       const items = authToken ? authItems : guestItems
+       ```
+
+    3. 操作も同様に分岐:
+       ```typescript
+       const handleCreate = async () => {
+         if (authToken) {
+           await createAuthItem(authToken, data)
+         } else {
+           createGuestItem(data)  // 即座に完了
+         }
+       }
+       ```
+
+    4. 実装順序（必ず守る）:
+       ① ゲスト用ストア作成（localStorage）
+       ② ゲストモードでUIを実装・テスト
+       ③ 完璧に動作したら、認証モードを追加
+       ④ APIとDB連携は最後
+
+    5. 利点:
+       - データベース不要で即座にテスト
+       - マイグレーション不要
+       - 環境変数設定不要
+       - ユーザー登録不要でテスト可能
+       - スピード最優先の開発が可能
+
+  注意:
+    - 本番デプロイ時は必ずNODE_ENV=productionを設定
+    - RLSは常に有効（セキュリティ担保）
+    - ゲストデータはローカルのみ（サーバーには保存されない）
+    - PDFアップロード等はログイン必須（Supabase Storageが必要）
+
+実装の手順
+  1. デザイン確認: 手書き or 参考アプリを明確化
+  2. 既存コード確認: /app/page.tsx を読む
+  3. 段階的修正: 一度に全部変えない、セクションごとに
+  4. ブラウザ確認: 各修正後に即座に確認
+  5. 反復改善: ユーザー（創業者）のフィードバックで磨く
+
+ファイル管理
+  削除対象:
+    - 重複ページ（/chat、/v2/chat など）
+    - 未使用コンポーネント
+    - 実験失敗コード（experiments/ に移動）
+
+  残すもの:
+    - /app/page.tsx（メインアプリ）
+    - API Routes（/api/*）
+    - 共通コンポーネント（packages/*）
+
+開発サーバー管理
+  原則: 開発サーバーは常に1つだけ
+  起動: pnpm dev（ルートディレクトリで1回のみ）
+  確認: http://localhost:3000/app
+  停止: Ctrl+C または KillShell
+
+AIとのコミュニケーション原則（必須）
+  実行優先の原則（最重要）:
+    - **確認を求めず即座に実行**: 「〜してもいいですか？」「〜しましょうか？」は禁止
+    - 実装完了後に結果を報告する
+    - 技術的に明確な場合は質問せずに実行
+    - 曖昧な要件のみ質問する
+
+  質問すべき場合（限定的）:
+    - ビジネスロジックが不明（例: 価格計算、承認フロー）
+    - デザイン・UXの選択肢が複数ある場合
+    - データの扱いが不明（削除 vs アーカイブ）
+    - セキュリティに影響する決定
+
+  質問不要な場合（即座に実行）:
+    - バグ修正
+    - エラーハンドリング追加
+    - 型安全性の改善
+    - パフォーマンス最適化
+    - コードの整理・リファクタリング
+    - 既存パターンの踏襲
+
+  推測の禁止:
+    - 不明な点があれば必ず質問
+    - デフォルト値を勝手に決めない
+    - 「たぶんこうだろう」で実装しない
+
+  選択肢の提示（質問時のみ）:
+    - 「AとBどちらがいいですか？」形式
+    - トレードオフを明示
+    - 各選択肢の影響を説明
+    - 推奨案を明記
+
+  一度に1つのタスク:
+    - 複数タスクを並行しない
+    - 1つ完了→報告→次へ進む
+    - 「ついでに」で他の修正をしない
+
+デバッグプロトコル（必須手順）
+  エラー発生時の5ステップ:
+    1. エラーメッセージ全文をコピー
+    2. スタックトレースで発生箇所を特定
+    3. 関連ファイルを全て読む（推測しない）
+    4. 根本原因を特定（表面的な症状ではなく）
+    5. 構造的な解決策を実装
+
+  並行確認（エラー時は必ず全て実行）:
+    - サーバーログ（BashOutput）
+    - ブラウザコンソール
+    - ネットワークタブ（APIレスポンス）
+    - データベース状態（Supabase Dashboard）
+    - 環境変数（.env.local）
+
+  エラー修正後の必須確認:
+    - 同じエラーケースで再テスト
+    - 関連する他の機能も確認
+    - ゲスト/認証両方で確認
+    - DECISIONS.mdに原因と解決策を記録
+
+  禁止事項:
+    - 「とりあえず」の修正
+    - エラーを握りつぶす（try-catch で無視）
+    - 推測での修正（必ずコードを読む）
+
+技術的負債の管理
+  DEBT.md記録: TODO/FIXME/HACK発見時に自動記録（Location/Issue/Impact/Estimated）
+  基準: High（セキュリティ・パフォーマンス）/Medium（重複・型安全性）/Low（命名・コメント）
+  タイミング: 3回目の重複でリファクタ、500行超えで分割、週1レビュー
+  禁止: コピペコード、any型乱用
+
+パフォーマンス予算（絶対遵守）
+  フロントエンド:
+    - 初回ロード: < 2秒（3G回線）
+    - ページサイズ: < 200KB（JS + CSS）
+    - 画像: WebP必須、< 100KB/枚
+    - Lighthouse Score: > 90点
+
+  バックエンド:
+    - API応答: < 500ms（p95）
+    - データベースクエリ: < 100ms
+    - AI応答: < 3秒（Gemini）
+
+  計測ルール:
+    - 新機能実装時に必ず計測
+    - Chrome DevTools Performance タブ
+    - Lighthouseレポート生成
+    - 基準を超えたら改善してからマージ
+
+  最適化の優先順位:
+    1. 不要なネットワークリクエスト削減
+    2. 画像最適化
+    3. コード分割（dynamic import）
+    4. キャッシング戦略
+
+セキュリティチェックリスト（デプロイ前必須）
+  認証・認可:
+    ✅ RLSが全テーブルで有効
+    ✅ APIキーは環境変数のみ
+    ✅ JWTトークン検証
+    ✅ CSRF対策（SameSite Cookie）
+
+  データ保護:
+    ✅ パスワードはハッシュ化（Supabase Auth）
+    ✅ 個人情報はログに出力しない
+    ✅ SQLインジェクション対策（Prepared Statement）
+    ✅ XSS対策（dangerouslySetInnerHTML禁止）
+
+  API セキュリティ:
+    ✅ レート制限（Upstash Redis）
+    ✅ CORS設定（許可ドメインのみ）
+    ✅ HTTPSのみ（HSTSヘッダー）
+    ✅ 機密データはPOSTのみ（GETに含めない）
+
+  環境変数チェック:
+    ✅ .env.local は .gitignore に含む
+    ✅ 本番環境変数はVercelで設定
+    ✅ API キーのローテーション計画
+
+  デプロイ前の最終確認:
+    1. git grep "TODO.*security" でセキュリティTODO確認
+    2. git grep "password.*=.*\".*\"" でハードコード確認
+    3. Supabase Dashboard でRLS有効確認
+    4. Vercel環境変数の二重確認
+
+
 ＃開発指針
 
 コード品質
@@ -403,6 +721,76 @@ AIの正確性と関連性
   画像最適化（next/image）
   コード分割とLazy loading
   バンドルサイズ監視
+
+
+＃エラー対応の絶対原則（最重要）
+
+一度解決したエラーは二度と発生させない
+  実装時の心構え:
+    - 根本原因を完全に理解してから修正する
+    - 表面的な対処療法ではなく、構造的な解決を行う
+    - 同じ種類のエラーが他の箇所で発生しないか確認する
+
+エラーハンドリングの必須実装パターン
+  1. try-catchでラップ
+  2. エラーステート管理（useState<string | null>）
+  3. 視覚的フィードバック（エラーUI、AlertCircle）
+  4. ローディング状態管理（isSaving, isLoading）
+  5. デバッグログ（console.error with prefix）
+
+型安全性の徹底
+  - any型は極力避ける（エラー型は any でも catch内のみOK）
+  - undefined/null チェックを必ず行う
+  - オプショナルチェーン(?.)を活用
+  - 型ガードを使用して実行時エラーを防ぐ
+
+名前衝突の回避（必須）
+  ブラウザネイティブAPIとライブラリの名前衝突を防ぐ:
+    - File, Blob, Event, Error等のグローバルオブジェクトに注意
+    - lucide-reactなどのアイコンライブラリをインポートする際は別名を使う
+    - 例: `import { File as FileIcon } from 'lucide-react'`
+    - new演算子を使う場合、同名のインポートがないか確認する
+    - VSCodeの型エラーを見逃さない（赤い波線を放置しない）
+
+依存関係の完全性チェック（新機能実装時）
+  新しいパッケージを使用する際の必須手順:
+    1. package.jsonに依存関係が含まれているか確認
+    2. 実装後、必ずブラウザで動作確認（ビルドエラーを見逃さない）
+    3. "Module not found"エラーが出たら即座にpnpm installを実行
+    4. API Routesで外部パッケージを使う場合、runtime設定を確認
+    5. Node.js専用パッケージ（pdf-parse, mammoth等）はruntimeを'nodejs'に設定
+
+ゲストユーザー対応パターン
+  認証が不要な機能は必ずゲスト対応を実装:
+    - API層: ゲストユーザーを特別扱い（uuid検証をスキップ）
+    - フロントエンド: localStorage永続化（Zustand + Persist）
+    - 条件分岐: `const isGuest = userId === 'guest'`
+    - データ分離: 認証ユーザーとゲストで別のストアを使用
+
+エラーUI実装の必須要素
+  - AlertCircle アイコン
+  - 赤いアラート（border-l-4 border-red-500）
+  - エラーメッセージの表示
+  - 閉じるボタン（✕）
+  - エラー発生箇所の近くに配置
+
+デバッグ時の確認事項
+  1. サーバーログを必ず確認（BashOutput tool使用）
+  2. ブラウザのDevToolsコンソールを確認
+  3. APIレスポンスのステータスコード確認（200, 400, 500等）
+  4. ネットワークタブでリクエスト/レスポンスの詳細確認
+  5. 開発サーバーの再起動が必要か判断
+
+エラーログの書き方
+  - プレフィックスを付ける: `[Feature API]`, `[Component]`
+  - エラー内容を明確に: `console.error('[Notes API] Error fetching notes:', error)`
+  - 成功ログも残す: `console.log('[Notes API] Successfully created note:', data)`
+
+修正後の必須確認
+  - すべてのエラーケースをテスト（成功、失敗、空データ等）
+  - モバイルサイズでも動作確認
+  - ゲストユーザーと認証ユーザー両方で確認
+  - ブラウザリロード後もデータが残るか確認（localStorage使用時）
 
 
 ＃学習リソース
