@@ -4,23 +4,24 @@ import { useState, useEffect, useRef } from 'react'
 import { useChatStore, Message } from '../stores/chatStore'
 import { useGuestNotesStore } from '../../notes/stores/guestNotesStore'
 import { MarkdownRenderer } from './MarkdownRenderer'
-import { Plus, MessageSquare, Trash2, Edit2, Check, X, Menu, ChevronLeft } from 'lucide-react'
+import { Send, Sparkles, TrendingUp, Lightbulb } from 'lucide-react'
 
 interface ChatPanelProps {
   userId?: string
 }
 
+// サジェスチョン（金融相談のよくある例）
+const SUGGESTIONS = [
+  { icon: '💰', text: '103万円の壁について教えて', category: '税制' },
+  { icon: '📊', text: '確定申告の準備を手伝って', category: '確定申告' },
+  { icon: '🏠', text: '住宅ローン控除について知りたい', category: '控除' },
+  { icon: '💼', text: 'iDeCoとNISAの違いは？', category: '投資' },
+]
+
 export function ChatPanel({ userId }: ChatPanelProps) {
   const {
-    conversations,
-    currentConversationId,
     getCurrentMessages,
-    createConversation,
-    deleteConversation,
-    setCurrentConversation,
-    renameConversation,
     addMessage,
-    clearMessages,
     isLoading,
     setLoading,
   } = useChatStore()
@@ -28,9 +29,6 @@ export function ChatPanel({ userId }: ChatPanelProps) {
   const { notes: guestNotes } = useGuestNotesStore()
   const [input, setInput] = useState('')
   const [expertMode, setExpertMode] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingTitle, setEditingTitle] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const messages = getCurrentMessages()
@@ -39,46 +37,6 @@ export function ChatPanel({ userId }: ChatPanelProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
-
-  // Create initial conversation if none exists
-  useEffect(() => {
-    if (conversations.length === 0) {
-      createConversation()
-    }
-  }, [])
-
-  const handleNewChat = () => {
-    createConversation()
-  }
-
-  const handleSelectConversation = (id: string) => {
-    setCurrentConversation(id)
-  }
-
-  const handleDeleteConversation = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (confirm('この会話を削除しますか？')) {
-      deleteConversation(id)
-    }
-  }
-
-  const handleStartEdit = (id: string, title: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setEditingId(id)
-    setEditingTitle(title)
-  }
-
-  const handleSaveEdit = (id: string) => {
-    if (editingTitle.trim()) {
-      renameConversation(id, editingTitle.trim())
-    }
-    setEditingId(null)
-  }
-
-  const handleCancelEdit = () => {
-    setEditingId(null)
-    setEditingTitle('')
-  }
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return
@@ -152,7 +110,7 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                     accumulatedContent += parsed.content
                     const currentConv = useChatStore
                       .getState()
-                      .conversations.find((c) => c.id === currentConversationId)
+                      .conversations.find((c) => c.id === useChatStore.getState().currentConversationId)
                     if (currentConv) {
                       const updatedMessages = currentConv.messages.map((msg, idx) =>
                         idx === currentConv.messages.length - 1
@@ -163,7 +121,7 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                         conversations: useChatStore
                           .getState()
                           .conversations.map((conv) =>
-                            conv.id === currentConversationId
+                            conv.id === useChatStore.getState().currentConversationId
                               ? { ...conv, messages: updatedMessages }
                               : conv
                           ),
@@ -200,6 +158,10 @@ export function ChatPanel({ userId }: ChatPanelProps) {
     }
   }
 
+  const handleSuggestionClick = (suggestionText: string) => {
+    setInput(suggestionText)
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -208,223 +170,198 @@ export function ChatPanel({ userId }: ChatPanelProps) {
   }
 
   return (
-    <div className="flex h-full bg-background">
-      {/* Sidebar - ChatGPT/Gemini Style */}
-      <div
-        className={`${
-          sidebarOpen ? 'w-64' : 'w-0'
-        } border-r border-border bg-secondary/30 transition-all duration-300 overflow-hidden flex flex-col`}
-      >
-        {/* Sidebar Header */}
-        <div className="p-3 border-b border-border flex-shrink-0">
-          <button
-            onClick={handleNewChat}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            新しいチャット
-          </button>
-        </div>
+    <div className="flex flex-col h-full bg-gradient-to-b from-white to-gray-50">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-4 py-8 md:px-6">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+              {/* Welcome Hero */}
+              <div className="text-center mb-12 animate-fadeIn">
+                <div className="mb-6 relative">
+                  <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                    <Sparkles className="w-10 h-10 text-white" />
+                  </div>
+                  <div className="absolute -top-2 -right-8 w-16 h-16 bg-blue-100 rounded-full opacity-20 animate-pulse"></div>
+                  <div className="absolute -bottom-3 -left-6 w-12 h-12 bg-purple-100 rounded-full opacity-20 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Faroへようこそ
+                </h2>
+                <p className="text-lg text-gray-600 mb-2">
+                  あなたのパーソナルCFO
+                </p>
+                <p className="text-sm text-gray-500 max-w-md mx-auto">
+                  税務・財務・投資に関するご相談を、専門家レベルの知識でサポートします
+                </p>
+              </div>
 
-        {/* Conversation List */}
-        <div className="flex-1 overflow-y-auto p-2">
-          {conversations.length === 0 ? (
-            <div className="text-center py-8 px-4 text-sm text-muted-foreground">
-              新しいチャットを開始
+              {/* Suggestions */}
+              <div className="w-full max-w-2xl animate-fadeIn" style={{ animationDelay: '0.2s' }}>
+                <div className="flex items-center gap-2 mb-4 px-2">
+                  <Lightbulb className="w-5 h-5 text-yellow-500" />
+                  <p className="text-sm font-semibold text-gray-700">よくある相談</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {SUGGESTIONS.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSuggestionClick(suggestion.text)}
+                      className="group p-4 rounded-xl border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all duration-200 text-left"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl">{suggestion.icon}</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 group-hover:text-purple-700 mb-1">
+                            {suggestion.text}
+                          </p>
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                            {suggestion.category}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Features */}
+              <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl animate-fadeIn" style={{ animationDelay: '0.4s' }}>
+                <div className="text-center p-4">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">リアルタイム分析</p>
+                  <p className="text-xs text-gray-500 mt-1">あなたの状況を即座に理解</p>
+                </div>
+                <div className="text-center p-4">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">AI専門家</p>
+                  <p className="text-xs text-gray-500 mt-1">税理士レベルの知識</p>
+                </div>
+                <div className="text-center p-4">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-pink-100 flex items-center justify-center">
+                    <span className="text-2xl">🔒</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">完全プライベート</p>
+                  <p className="text-xs text-gray-500 mt-1">データは安全に保護</p>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="space-y-1">
-              {conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  onClick={() => handleSelectConversation(conv.id)}
-                  className={`group relative px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
-                    conv.id === currentConversationId
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'hover:bg-secondary text-foreground'
-                  }`}
-                >
-                  {editingId === conv.id ? (
-                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="text"
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') handleSaveEdit(conv.id)
-                          if (e.key === 'Escape') handleCancelEdit()
-                        }}
-                        className="flex-1 px-2 py-1 text-sm bg-background border border-border rounded"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleSaveEdit(conv.id)}
-                        className="p-1 hover:bg-background rounded"
-                      >
-                        <Check className="w-3.5 h-3.5 text-green-600" />
-                      </button>
-                      <button onClick={handleCancelEdit} className="p-1 hover:bg-background rounded">
-                        <X className="w-3.5 h-3.5 text-red-600" />
-                      </button>
+            <>
+              {messages.map((msg, idx) => (
+                <div key={idx} className="mb-8 animate-fadeIn">
+                  <div className="flex items-start gap-3 md:gap-4">
+                    {/* Avatar */}
+                    <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center flex-shrink-0 rounded-full ${
+                      msg.role === 'user'
+                        ? 'bg-gradient-to-br from-gray-200 to-gray-300'
+                        : 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500'
+                    }`}>
+                      {msg.role === 'user' ? (
+                        <span className="text-sm font-semibold text-gray-700">You</span>
+                      ) : (
+                        <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                      )}
                     </div>
-                  ) : (
-                    <>
-                      <div className="flex items-start gap-2 pr-8">
-                        <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm line-clamp-2">{conv.title}</span>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-semibold text-sm text-gray-900">
+                          {msg.role === 'user' ? 'You' : 'Faro CFO'}
+                        </span>
+                        {msg.expertMode && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                            <span>⚖️</span>
+                            <span className="hidden md:inline">エキスパート</span>
+                          </span>
+                        )}
                       </div>
-                      <div className="absolute right-2 top-2 hidden group-hover:flex gap-1">
-                        <button
-                          onClick={(e) => handleStartEdit(conv.id, conv.title, e)}
-                          className="p-1 hover:bg-background rounded transition-colors"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteConversation(conv.id, e)}
-                          className="p-1 hover:bg-background rounded transition-colors text-red-600"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <div className={`prose prose-sm md:prose-base max-w-none ${
+                        msg.role === 'user' ? 'text-gray-700' : 'text-gray-900'
+                      }`}>
+                        <MarkdownRenderer content={msg.content} />
                       </div>
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </div>
               ))}
-            </div>
+
+              {isLoading && (
+                <div className="mb-8 animate-fadeIn">
+                  <div className="flex items-start gap-3 md:gap-4">
+                    <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center flex-shrink-0 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500">
+                      <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="font-semibold text-sm text-gray-900 block mb-2">Faro CFO</span>
+                      <div className="flex gap-1.5">
+                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></span>
+                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
+
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-border bg-background flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-secondary rounded-lg transition-colors"
-            >
-              {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-            <h2 className="text-xl font-bold text-foreground">💬 Faro</h2>
-          </div>
-          {messages.length > 0 && (
-            <button
-              onClick={() => {
-                if (confirm('このチャットをクリアしますか？')) {
-                  clearMessages()
-                }
-              }}
-              className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-secondary transition-colors flex items-center gap-1.5"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              クリア
-            </button>
-          )}
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-4 py-6">
-            {messages.length === 0 && (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">💼</div>
-                <h3 className="text-2xl font-semibold mb-2">Faroへようこそ</h3>
-                <p className="text-muted-foreground">
-                  あなたのパーソナルCFOとして、税務・財務の最適化をサポートします。
-                </p>
-              </div>
-            )}
-
-            {messages.map((msg, idx) => (
-              <div key={idx} className="mb-6 animate-fadeIn">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-full bg-secondary">
-                    {msg.role === 'user' ? '👤' : '💼'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold mb-1 text-sm">
-                      {msg.role === 'user' ? 'You' : 'Faro'}
-                    </div>
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
-                      <MarkdownRenderer content={msg.content} />
-                    </div>
-                    {msg.expertMode && (
-                      <span className="inline-block mt-2 px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
-                        ⚖️ エキスパートモード
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {isLoading && (
-              <div className="mb-6 animate-fadeIn">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-full bg-secondary">
-                    💼
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold mb-1 text-sm">Faro</div>
-                    <div className="flex gap-1.5">
-                      <span
-                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: '0s' }}
-                      ></span>
-                      <span
-                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: '0.2s' }}
-                      ></span>
-                      <span
-                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: '0.4s' }}
-                      ></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-
-        {/* Input */}
-        <div className="border-t border-border bg-background">
-          <div className="max-w-3xl mx-auto px-4 py-4">
-            <div className="flex items-center gap-2 mb-3 text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
+      {/* Input Area */}
+      <div className="border-t border-gray-200 bg-white shadow-lg">
+        <div className="max-w-4xl mx-auto px-4 py-4 md:px-6">
+          {/* Expert Mode Toggle */}
+          <div className="flex items-center gap-2 mb-3">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <div className="relative">
                 <input
                   type="checkbox"
                   checked={expertMode}
                   onChange={(e) => setExpertMode(e.target.checked)}
-                  className="w-4 h-4 accent-primary cursor-pointer"
+                  className="sr-only peer"
                 />
-                <span className="font-medium">⚖️ エキスパートモード</span>
-              </label>
-              <span className="text-xs text-muted-foreground">（法的根拠・リスク評価含む）</span>
-            </div>
+                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-purple-600 transition-colors"></div>
+                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+              </div>
+              <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                ⚖️ エキスパートモード
+              </span>
+            </label>
+            <span className="text-xs text-gray-500 hidden md:inline">（法的根拠・詳細分析）</span>
+          </div>
 
-            <div className="flex gap-3 items-end">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="メッセージを入力..."
-                rows={3}
-                disabled={isLoading}
-                className="flex-1 px-4 py-3 border border-border rounded-xl bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-              />
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                送信
-              </button>
-            </div>
+          {/* Input Box */}
+          <div className="relative">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Faroに相談してみましょう..."
+              rows={1}
+              disabled={isLoading}
+              className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-2xl bg-white resize-none focus:outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-gray-900 placeholder-gray-400"
+              style={{ minHeight: '52px', maxHeight: '150px' }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement
+                target.style.height = 'auto'
+                target.style.height = target.scrollHeight + 'px'
+              }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              className="absolute right-2 bottom-2 p-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:from-blue-500 disabled:hover:to-purple-600 shadow-md hover:shadow-lg"
+            >
+              <Send className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>
