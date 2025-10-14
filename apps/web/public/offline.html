@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faro - オフライン</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon svg {
+            width: 40px;
+            height: 40px;
+            color: #6b7280;
+        }
+
+        h1 {
+            color: #111827;
+            font-size: 24px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        p {
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .button:hover {
+            background: #2563eb;
+        }
+
+        .status {
+            margin-top: 24px;
+            padding: 12px;
+            background: #fef3c7;
+            border-radius: 8px;
+            color: #92400e;
+            font-size: 14px;
+        }
+
+        .cached-data {
+            margin-top: 24px;
+            text-align: left;
+        }
+
+        .cached-data h3 {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .cached-data ul {
+            list-style: none;
+        }
+
+        .cached-data li {
+            padding: 8px 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-size: 14px;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M18.364 5.636a9 9 0 11-12.728 0M12 3v9m0 0l3-3m-3 3l-3-3"/>
+            </svg>
+        </div>
+
+        <h1>オフラインです</h1>
+        <p>
+            インターネット接続がありません。<br>
+            ローカルに保存されたデータのみ利用可能です。
+        </p>
+
+        <button class="button" onclick="window.location.reload()">
+            再接続を試す
+        </button>
+
+        <div class="status">
+            💡 接続が回復したら自動的に同期されます
+        </div>
+
+        <div class="cached-data" id="cachedData" style="display: none;">
+            <h3>利用可能なオフラインデータ:</h3>
+            <ul id="cachedList"></ul>
+        </div>
+    </div>
+
+    <script>
+        // Check connection status
+        function checkConnection() {
+            if (navigator.onLine) {
+                window.location.reload();
+            }
+        }
+
+        // Check every 5 seconds
+        setInterval(checkConnection, 5000);
+
+        // Show cached data if available
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                if (names.length > 0) {
+                    document.getElementById('cachedData').style.display = 'block';
+                    const list = document.getElementById('cachedList');
+
+                    // Add cached items
+                    const items = [
+                        '最近のチャット履歴',
+                        'ノート（ローカル保存）',
+                        '設定情報'
+                    ];
+
+                    items.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = '✓ ' + item;
+                        list.appendChild(li);
+                    });
+                }
+            });
+        }
+
+        // Listen for online event
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>

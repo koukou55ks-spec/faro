@@ -15,6 +15,7 @@ import { KakeiboPanel } from '@/src/features/kakeibo/components/KakeiboPanel'
 import { ReportPanel } from '@/src/features/kakeibo/components/ReportPanel'
 import { useAppStore } from '@/lib/store/useAppStore'
 import { createClient } from '@supabase/supabase-js'
+import { useAccessibility } from '@/hooks/useAccessibility'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -32,6 +33,7 @@ export default function FaroMainPage() {
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [authToken, setAuthToken] = useState<string | null>(null)
+  const { announce } = useAccessibility({ enableKeyboardShortcuts: true })
 
   const isGuest = !user
 
@@ -86,6 +88,7 @@ export default function FaroMainPage() {
   const handleNewChat = () => {
     createConversation()
     setViewMode('chat')
+    announce('新しいチャットを作成しました')
     if (window.innerWidth < 768) {
       setSidebarOpen(false)
     }

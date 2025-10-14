@@ -5,6 +5,7 @@ import { useChatStore, Message } from '../stores/chatStore'
 import { useGuestNotesStore } from '../../notes/stores/guestNotesStore'
 import { MarkdownRenderer } from './MarkdownRenderer'
 import { Send, Sparkles, TrendingUp, Lightbulb } from 'lucide-react'
+import { ChatMessageSkeleton } from '@/components/LoadingSkeleton'
 
 interface ChatPanelProps {
   userId?: string
@@ -291,23 +292,7 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                 </div>
               ))}
 
-              {isLoading && (
-                <div className="mb-8 animate-fadeIn">
-                  <div className="flex items-start gap-3 md:gap-4">
-                    <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center flex-shrink-0 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500">
-                      <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <span className="font-semibold text-sm text-gray-900 block mb-2">Faro CFO</span>
-                      <div className="flex gap-1.5">
-                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></span>
-                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {isLoading && <ChatMessageSkeleton />}
             </>
           )}
 
