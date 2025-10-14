@@ -5,7 +5,7 @@ import { useChatStore, Message } from '../stores/chatStore'
 import { useGuestNotesStore } from '../../notes/stores/guestNotesStore'
 import { MarkdownRenderer } from './MarkdownRenderer'
 import { Send, Sparkles, TrendingUp, Lightbulb } from 'lucide-react'
-import { ChatMessageSkeleton } from '@/components/LoadingSkeleton'
+import { ChatMessageSkeleton } from '../../../../components/LoadingSkeleton'
 
 interface ChatPanelProps {
   userId?: string

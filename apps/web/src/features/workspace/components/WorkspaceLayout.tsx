@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { ChatPanel } from '@/src/features/chat'
-import { NotesPanel } from '@/src/features/notes'
+import { ChatPanel } from '../../chat/components/ChatPanel'
+import { NotesPanel } from '../../notes/components/NotesPanel'
 
 interface WorkspaceLayoutProps {
   userId: string
