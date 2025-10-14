@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/web && pnpm turbo run build --filter=faro-frontend",
+  "buildCommand": "pnpm turbo run build --filter=faro-frontend",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "nextjs",
   "outputDirectory": ".next"
