@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { Menu, Plus, Mic, Send, Loader2, Sparkles, X, ChevronRight, ChevronDown, FileText, Wallet, Upload, TrendingUp } from 'lucide-react'
 import { NotesPanel } from '@/src/features/notes/components/NotesPanel'
+import { ChatPanel } from '@/src/features/chat/components/ChatPanel'
 import { useGuestNotesStore } from '@/src/features/notes/stores/guestNotesStore'
 import { SourceSelector } from '@/src/features/documents/components/SourceSelector'
 import { DocumentsPanel } from '@/src/features/documents/components/DocumentsPanel'
@@ -375,153 +376,8 @@ export default function FaroMainPage() {
         {/* コンテンツエリア */}
         <div className="flex-1 overflow-hidden">
         {viewMode === 'chat' ? (
-          <div className="h-full flex flex-col animate-fadeIn">
-            {/* メッセージエリア */}
-            <div className="flex-1 overflow-y-auto px-4 py-6">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-faro-purple to-faro-purple-light flex items-center justify-center mb-6">
-                    <Sparkles className="w-10 h-10 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">Faroに聞いてみる</h2>
-                  <p className="text-sm text-gray-600">
-                    あなたの金融パートナーとして、何でもお聞きください
-                  </p>
-                </div>
-              ) : (
-                <div className="max-w-3xl mx-auto space-y-6">
-                  {messages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {message.role === 'assistant' && (
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-faro-purple to-faro-purple-light flex items-center justify-center flex-shrink-0">
-                          <Sparkles className="w-4 h-4 text-white" />
-                        </div>
-                      )}
-                      <div
-                        className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                          message.role === 'user'
-                            ? 'bg-faro-purple text-white'
-                            : 'bg-gray-100 text-gray-900'
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap">{message.content}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <p className={`text-xs ${
-                            message.role === 'user'
-                              ? 'text-purple-200'
-                              : 'text-gray-500'
-                          }`}>
-                            {formatTime(message.timestamp)}
-                          </p>
-                          {message.expertMode && (
-                            <span className="inline-block px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                              ⚖️ エキスパート
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {message.role === 'user' && (
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-gray-300">
-                          <span className="text-xs">You</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-faro-purple to-faro-purple-light flex items-center justify-center flex-shrink-0 mr-3">
-                        <Sparkles className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="rounded-2xl px-4 py-3 bg-gray-100">
-                        <div className="flex items-center space-x-2">
-                          <Loader2 className="w-4 h-4 text-faro-purple animate-spin" />
-                          <span className="text-sm text-gray-600">考えています...</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
-            </div>
-
-            {/* 入力エリア */}
-            <div className="border-t border-gray-200 p-4">
-              <div className="max-w-3xl mx-auto space-y-3">
-                {/* Expert Mode Toggle */}
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                    <input
-                      type="checkbox"
-                      checked={expertMode}
-                      onChange={(e) => setExpertMode(e.target.checked)}
-                      className="w-4 h-4 accent-faro-purple cursor-pointer"
-                    />
-                    <span>⚖️ エキスパートモード</span>
-                  </label>
-                  <span className="text-xs text-gray-500">（法的根拠・実務アドバイス含む）</span>
-                </div>
-
-                {/* Source Selector */}
-                {!isGuest && (
-                  <div className="flex items-center gap-2">
-                    <SourceSelector onSelectionChange={setSourceSelection} />
-                    {(sourceSelection.documents.length > 0 || sourceSelection.collections.length > 0) && (
-                      <div className="text-xs text-gray-500">
-                        AIは選択したソースを参照して回答します
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Input area */}
-                <div className="flex items-end gap-2 rounded-2xl p-2 bg-gray-100">
-                  <button
-                    className="p-2 rounded-xl transition-colors flex-shrink-0 hover:bg-gray-200 text-gray-600"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
-
-                  <textarea
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="Faroに聞いてみる..."
-                    className="flex-1 bg-transparent border-none outline-none resize-none max-h-32 py-2 placeholder-gray-400 text-gray-900"
-                    rows={1}
-                    disabled={isLoading}
-                  />
-
-                  <button
-                    onClick={() => setIsRecording(!isRecording)}
-                    className={`p-2 rounded-xl transition-all flex-shrink-0 ${
-                      isRecording
-                        ? 'bg-red-500 text-white animate-pulse'
-                        : 'hover:bg-gray-200 text-gray-600'
-                    }`}
-                  >
-                    <Mic className="w-5 h-5" />
-                  </button>
-
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={!inputMessage.trim() || isLoading}
-                    className={`p-2 rounded-xl transition-all flex-shrink-0 ${
-                      inputMessage.trim()
-                        ? 'bg-faro-purple hover:bg-faro-purple-dark text-white'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    }`}
-                  >
-                    <Send className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="h-full animate-fadeIn">
+            <ChatPanel userId={user?.id} />
           </div>
         ) : viewMode === 'notes' ? (
           <div className="h-full animate-fadeIn">
