@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GeminiService, SupabaseContextService } from '@faro/infrastructure';
 import { SendMessageUseCase } from '@faro/core';
-import { SupabaseConversationRepository } from '@faro/infrastructure';
+import { SupabaseConversationRepository } from '@faro/infrastructure/src/database/SupabaseConversationRepository';
 
 export async function POST(request: NextRequest) {
   try {
