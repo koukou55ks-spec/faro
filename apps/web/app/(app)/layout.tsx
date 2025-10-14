@@ -2,8 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/hooks/useAuth'
-import { motion } from 'framer-motion'
+import { useAuth } from '../../lib/hooks/useAuth'
 import { Sparkles } from 'lucide-react'
 
 export default function AppLayout({
@@ -24,12 +23,9 @@ export default function AppLayout({
   if (loading) {
     return (
       <div className="h-screen bg-black flex items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
+        <div className="animate-spin">
           <Sparkles className="w-12 h-12 text-violet-500" />
-        </motion.div>
+        </div>
       </div>
     )
   }
