@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: '税務・財務・投資に関する専門家レベルの金融アドバイスをAIが提供。あなたの一生涯の金融思考パートナー。',
   keywords: ['金融アドバイス', 'AI CFO', '税務相談', '投資戦略', '財務管理', '確定申告', 'パーソナルファイナンス'],
   authors: [{ name: 'Faro Team' }],
-  metadataBase: new URL('https://faro.app'),
+  metadataBase: new URL('https://taxhack.vercel.app'),
   openGraph: {
     title: 'Faro - パーソナルCFO AI',
     description: '知識格差を是正し、誰もが富裕層の知恵にアクセスできる',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     siteName: 'Faro',
     images: [
       {
-        url: '/og-image.png',
+        url: '/api/og?title=Faro&description=Your%20lifelong%20financial%20thinking%20partner',
         width: 1200,
         height: 630,
         alt: 'Faro - Your Personal CFO',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Faro - あなたのパーソナルCFO',
     description: '税務・財務・投資に関する専門家レベルの金融アドバイスをAIが提供',
-    images: ['/og-image.png'],
+    images: ['/api/og?title=Faro&description=Your%20lifelong%20financial%20thinking%20partner'],
   },
   robots: {
     index: true,
