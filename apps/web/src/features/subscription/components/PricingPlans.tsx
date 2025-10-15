@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { Check, Loader2, Sparkles, Zap, AlertCircle } from 'lucide-react'
-import { loadStripe } from '@stripe/stripe-js'
 import { useAuth } from '../../../../lib/hooks/useAuth'
 
 // Stripeの初期化（環境変数が設定されている場合のみ）
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null
+// 環境変数がない場合はloadStripe自体をインポートしない（エラー回避）
+let stripePromise: Promise<any> | null = null
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+  import('@stripe/stripe-js').then(({ loadStripe }) => {
+    stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+  })
+}
 
 interface PricingPlansProps {
   currentPlan?: string
