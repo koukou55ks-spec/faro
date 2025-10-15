@@ -1,348 +1,358 @@
-import { Metadata } from 'next'
-import Link from 'next/link'
-import { Sparkles, Shield, Zap, Brain, ArrowRight, Check, Star, TrendingUp, Users, Lock } from 'lucide-react'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'Faro - あなたのパーソナルCFO | AI金融アドバイザー',
-  description: '税務・財務・投資に関する専門家レベルの金融アドバイスをAIが24時間365日提供。確定申告、節税対策、資産運用まで、あなたの金融ライフを完全サポート。',
-  keywords: ['AI金融アドバイザー', 'パーソナルCFO', '税務相談', '確定申告', '節税対策', '資産運用', '投資アドバイス', '家計簿アプリ', 'ファイナンシャルプランニング'],
-  openGraph: {
-    title: 'Faro - あなたのパーソナルCFO',
-    description: '専門家レベルの金融アドバイスをAIが提供。税務・投資・財務管理を一元化。',
-    type: 'website',
-    url: 'https://faro.app',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Faro - Your Personal CFO',
+import { useState, useEffect, useRef } from 'react'
+import { useAuth } from '../lib/hooks/useAuth'
+import { Menu, Plus, Mic, Send, Loader2, Sparkles, X, ChevronRight, ChevronDown, FileText, Wallet, Upload, TrendingUp, MessageSquare, Trash2 } from 'lucide-react'
+import { NotesPanel } from '../src/features/notes/components/NotesPanel'
+import { ChatPanel } from '../src/features/chat/components/ChatPanel'
+import { useChatStore } from '../src/features/chat/stores/chatStore'
+import { useGuestNotesStore } from '../src/features/notes/stores/guestNotesStore'
+import { SourceSelector } from '../src/features/documents/components/SourceSelector'
+import { DocumentsPanel } from '../src/features/documents/components/DocumentsPanel'
+import { NotebookLMView } from '../src/features/documents/components/NotebookLMView'
+import { useDocumentsStore } from '../src/features/documents/stores/documentsStore'
+import { KakeiboPanel } from '../src/features/kakeibo/components/KakeiboPanel'
+import { ReportPanel } from '../src/features/kakeibo/components/ReportPanel'
+import { useAppStore } from '../lib/store/useAppStore'
+import { createClient } from '@supabase/supabase-js'
+import { useAccessibility } from '../hooks/useAccessibility'
+
+interface Message {
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: Date
+  expertMode?: boolean
+}
+
+export default function FaroMainPage() {
+  const { user, loading } = useAuth()
+  const { notes: guestNotes } = useGuestNotesStore()
+  const { fetchDocuments, fetchCollections } = useDocumentsStore()
+  const { viewMode, isSidebarOpen, setViewMode, setSidebarOpen, toggleSidebar } = useAppStore()
+  const { conversations, currentConversationId, createConversation, setCurrentConversation, deleteConversation } = useChatStore()
+  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(true)
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const [authToken, setAuthToken] = useState<string | null>(null)
+  const { announce } = useAccessibility({ enableKeyboardShortcuts: true })
+
+  const isGuest = !user
+
+  // Auto-open sidebar on desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(true)
+      } else {
+        setSidebarOpen(false)
       }
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Faro - あなたのパーソナルCFO',
-    description: '専門家レベルの金融アドバイスをAIが提供',
-    images: ['/og-image.png'],
-  },
-  alternates: {
-    canonical: 'https://faro.app',
-  },
-}
+    }
 
-// Structured Data for SEO
-const structuredData = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Faro',
-  applicationCategory: 'FinanceApplication',
-  description: '税務・財務・投資に関する専門家レベルの金融アドバイスをAIが提供するパーソナルCFOアプリ',
-  operatingSystem: 'Web, iOS, Android',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'JPY',
-  },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    ratingCount: '1250',
-  },
-  author: {
-    '@type': 'Organization',
-    name: 'Faro Inc.',
-    url: 'https://faro.app',
-  },
-}
+    handleResize()
+    window.addEventListener('resize', handleResize)
 
-const features = [
-  {
-    icon: Brain,
-    title: 'AI金融アドバイザー',
-    description: '税理士・FP級の専門知識で24時間サポート',
-  },
-  {
-    icon: Shield,
-    title: '完全プライバシー保護',
-    description: '銀行レベルのセキュリティで大切な情報を守る',
-  },
-  {
-    icon: Zap,
-    title: '即座に回答',
-    description: '複雑な税務相談も数秒で的確なアドバイス',
-  },
-  {
-    icon: TrendingUp,
-    title: '資産最適化',
-    description: '節税・投資戦略で資産形成を加速',
-  },
-]
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
-const testimonials = [
-  {
-    name: '山田太郎',
-    role: '個人事業主',
-    content: '確定申告の準備が驚くほど簡単になりました。節税アドバイスのおかげで、昨年より30万円も節約できました。',
-    rating: 5,
-  },
-  {
-    name: '佐藤花子',
-    role: '会社員',
-    content: 'iDeCoとNISAの違いがやっと理解できました。将来の資産形成に自信が持てるようになりました。',
-    rating: 5,
-  },
-  {
-    name: '鈴木一郎',
-    role: 'フリーランス',
-    content: '経費計算から確定申告まで、全てFaroにお任せ。税理士に頼むより断然お得です。',
-    rating: 5,
-  },
-]
+  // Get auth token for API calls
+  useEffect(() => {
+    if (user) {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.access_token) {
+          setAuthToken(session.access_token)
+          // Fetch documents and collections
+          fetchDocuments(session.access_token)
+          fetchCollections(session.access_token)
+        }
+      })
+    }
+  }, [user])
 
-const stats = [
-  { value: '50,000+', label: 'アクティブユーザー' },
-  { value: '4.8', label: 'ユーザー評価' },
-  { value: '¥3.2億', label: '節税実績' },
-  { value: '24/7', label: 'サポート対応' },
-]
+  // 初回会話作成
+  useEffect(() => {
+    if (conversations.length === 0 && viewMode === 'chat') {
+      createConversation()
+    }
+  }, [])
 
-export default function LandingPage() {
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
+  // 時刻更新
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
-      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-        {/* Navigation */}
-        <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">Faro</span>
-              </div>
+  // 新規チャット作成
+  const handleNewChat = () => {
+    createConversation()
+    setViewMode('chat')
+    announce('新しいチャットを作成しました')
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false)
+    }
+  }
 
-              <div className="hidden md:flex items-center gap-8">
-                <a href="#features" className="text-gray-600 hover:text-gray-900 transition">機能</a>
-                <a href="#testimonials" className="text-gray-600 hover:text-gray-900 transition">お客様の声</a>
-                <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition">料金</a>
-              </div>
+  // 会話選択
+  const handleSelectConversation = (convId: string) => {
+    setCurrentConversation(convId)
+    setViewMode('chat')
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false)
+    }
+  }
 
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/auth/login"
-                  className="text-gray-600 hover:text-gray-900 transition"
-                >
-                  ログイン
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition shadow-md"
-                >
-                  無料で始める
-                </Link>
-              </div>
-            </div>
+  // 会話削除
+  const handleDeleteConversation = (convId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (confirm('この会話を削除しますか？')) {
+      deleteConversation(convId)
+    }
+  }
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('ja-JP', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#0F0F0F]">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center animate-pulse">
+            <Sparkles className="w-8 h-8 text-white" />
           </div>
-        </nav>
-
-        {/* Hero Section */}
-        <section className="pt-32 pb-20 px-4">
-          <div className="max-w-7xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              あなたのパーソナルCFO
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              税務・財務・投資のプロフェッショナルな知識を、<br />
-              AIが24時間365日提供します
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link
-                href="/app"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition shadow-lg text-lg font-semibold"
-              >
-                無料で相談を始める
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link
-                href="#demo"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition shadow-lg border border-gray-200 text-lg font-semibold"
-              >
-                デモを見る
-              </Link>
-            </div>
-
-            <div className="flex items-center justify-center gap-8 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Check className="w-4 h-4 text-green-500" />
-                <span>クレカ登録不要</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Check className="w-4 h-4 text-green-500" />
-                <span>30日間無料</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Check className="w-4 h-4 text-green-500" />
-                <span>いつでも解約可能</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {stats.map((stat, idx) => (
-                <div key={idx} className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section id="features" className="py-20 px-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                プロの金融アドバイスを、誰もが使える形に
-              </h2>
-              <p className="text-lg text-gray-600">
-                富裕層だけが持っていた金融知識を、AIテクノロジーで民主化
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map((feature, idx) => (
-                <div
-                  key={idx}
-                  className="p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow"
-                >
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center mb-4">
-                    <feature.icon className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-gray-600 text-sm">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials Section */}
-        <section id="testimonials" className="py-20 px-4 bg-gray-50">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                お客様の声
-              </h2>
-              <p className="text-lg text-gray-600">
-                すでに多くの方々の金融ライフを改善しています
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, idx) => (
-                <div
-                  key={idx}
-                  className="p-6 bg-white rounded-xl shadow-md"
-                >
-                  <div className="flex items-center gap-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                    ))}
-                  </div>
-                  <p className="text-gray-700 mb-4">"{testimonial.content}"</p>
-                  <div>
-                    <div className="font-semibold">{testimonial.name}</div>
-                    <div className="text-sm text-gray-600">{testimonial.role}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20 px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              今すぐ始めて、金融の不安から解放されましょう
-            </h2>
-            <p className="text-lg text-gray-600 mb-8">
-              30日間の無料トライアル。クレジットカード不要。
-            </p>
-            <Link
-              href="/app"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition shadow-lg text-lg font-semibold"
-            >
-              無料で始める
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="bg-gray-900 text-white py-12 px-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid md:grid-cols-4 gap-8">
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-xl font-bold">Faro</span>
-                </div>
-                <p className="text-gray-400 text-sm">
-                  あなたの一生涯の金融思考パートナー
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-4">製品</h3>
-                <ul className="space-y-2 text-gray-400 text-sm">
-                  <li><a href="#" className="hover:text-white transition">機能</a></li>
-                  <li><a href="#" className="hover:text-white transition">料金</a></li>
-                  <li><a href="#" className="hover:text-white transition">セキュリティ</a></li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-4">会社</h3>
-                <ul className="space-y-2 text-gray-400 text-sm">
-                  <li><a href="#" className="hover:text-white transition">会社概要</a></li>
-                  <li><a href="#" className="hover:text-white transition">採用情報</a></li>
-                  <li><a href="#" className="hover:text-white transition">お問い合わせ</a></li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-4">法的情報</h3>
-                <ul className="space-y-2 text-gray-400 text-sm">
-                  <li><a href="/terms" className="hover:text-white transition">利用規約</a></li>
-                  <li><a href="/privacy" className="hover:text-white transition">プライバシーポリシー</a></li>
-                  <li><a href="/law" className="hover:text-white transition">特定商取引法</a></li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400 text-sm">
-              © 2024 Faro Inc. All rights reserved.
-            </div>
-          </div>
-        </footer>
+          <p className="text-gray-400">Loading...</p>
+        </div>
       </div>
-    </>
+    )
+  }
+
+  // MVP: Allow guest access (skip auth check)
+  // if (!user) {
+  //   router.push('/auth/login')
+  //   return null
+  // }
+
+  return (
+    <div className="flex h-screen bg-white text-gray-900">
+      {/* サイドバー */}
+      <aside
+        className={`fixed md:static inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } bg-gray-50 border-r border-gray-200 flex-shrink-0`}
+      >
+        <div className="flex flex-col h-full">
+          {/* サイドバーヘッダー */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-faro-purple to-faro-purple-light flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <h1 className="text-xl font-bold">Faro</h1>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-lg transition-colors hover:bg-gray-200 md:hidden"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* 新規チャット */}
+          <div className="p-4">
+            <button
+              onClick={handleNewChat}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              新規チャット
+            </button>
+          </div>
+
+          {/* チャット履歴 */}
+          <div className="flex-1 overflow-y-auto px-4">
+            <div className="mb-6">
+              <button
+                onClick={() => setIsChatHistoryOpen(!isChatHistoryOpen)}
+                className="w-full flex items-center justify-between text-sm font-semibold mb-3 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <span>💬 チャット履歴 ({conversations.length})</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isChatHistoryOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isChatHistoryOpen && (
+                <div className="space-y-1">
+                  {conversations.length === 0 ? (
+                    <p className="text-xs text-gray-500 text-center py-4">まだ会話がありません</p>
+                  ) : (
+                    conversations.map((conv) => (
+                      <button
+                        key={conv.id}
+                        onClick={() => handleSelectConversation(conv.id)}
+                        className={`group w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
+                          conv.id === currentConversationId
+                            ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-l-2 border-purple-500 font-medium'
+                            : 'hover:bg-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                            conv.id === currentConversationId ? 'text-purple-600' : 'text-gray-400'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate text-gray-900">{conv.title}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {new Date(conv.updatedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                            </p>
+                          </div>
+                          <button
+                            onClick={(e) => handleDeleteConversation(conv.id, e)}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                          </button>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ノート */}
+            <div className="mb-6">
+              <button
+                onClick={() => {
+                  setViewMode('notebook')
+                  if (window.innerWidth < 768) {
+                    setSidebarOpen(false)
+                  }
+                }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
+                  viewMode === 'notebook' ? 'bg-faro-purple text-white' : 'hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                ノート
+              </button>
+            </div>
+
+            {/* 家計簿 */}
+            <div className="mb-6">
+              <button
+                onClick={() => {
+                  setViewMode('kakeibo')
+                  if (window.innerWidth < 768) {
+                    setSidebarOpen(false)
+                  }
+                }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
+                  viewMode === 'kakeibo' ? 'bg-faro-purple text-white' : 'hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                <Wallet className="w-4 h-4" />
+                家計簿
+              </button>
+            </div>
+
+            {/* レポート */}
+            <div className="mb-6">
+              <button
+                onClick={() => {
+                  setViewMode('report')
+                  if (window.innerWidth < 768) {
+                    setSidebarOpen(false)
+                  }
+                }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${
+                  viewMode === 'report' ? 'bg-faro-purple text-white' : 'hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                <TrendingUp className="w-4 h-4" />
+                レポート
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* サイドバーオーバーレイ (モバイルのみ) */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* メインコンテンツ */}
+      <main className="flex-1 flex flex-col">
+        {/* ヘッダー */}
+        <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => toggleSidebar()}
+              className="p-2 rounded-lg transition-colors hover:bg-gray-100"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-faro-purple to-faro-purple-light flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-bold text-lg">
+                {viewMode === 'chat' ? 'Faro' :
+                 viewMode === 'notes' ? 'ノート' :
+                 viewMode === 'documents' ? 'ドキュメント' :
+                 viewMode === 'notebook' ? 'Notebook' :
+                 viewMode === 'kakeibo' ? '家計簿' :
+                 viewMode === 'report' ? 'レポート' :
+                 'Faro'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {viewMode === 'chat' && (
+              <div className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100">
+                {formatTime(currentTime)}
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* コンテンツエリア */}
+        <div className="flex-1 overflow-hidden">
+        {viewMode === 'chat' ? (
+          <div className="h-full animate-fadeIn">
+            <ChatPanel userId={user?.id} />
+          </div>
+        ) : viewMode === 'notes' ? (
+          <div className="h-full animate-fadeIn">
+            <NotesPanel userId={user?.id || 'guest'} />
+          </div>
+        ) : viewMode === 'documents' ? (
+          <div className="h-full animate-fadeIn">
+            <DocumentsPanel authToken={authToken || undefined} />
+          </div>
+        ) : viewMode === 'notebook' ? (
+          <div className="h-full animate-fadeIn">
+            <NotebookLMView authToken={authToken || undefined} isGuest={isGuest} />
+          </div>
+        ) : viewMode === 'kakeibo' ? (
+          <div className="h-full animate-fadeIn">
+            <KakeiboPanel userId={user?.id} />
+          </div>
+        ) : viewMode === 'report' ? (
+          <div className="h-full animate-fadeIn">
+            <ReportPanel userId={user?.id} />
+          </div>
+        ) : null}
+        </div>
+      </main>
+    </div>
   )
 }
