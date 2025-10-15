@@ -122,3 +122,7 @@ learning_data.json
 
 # Supabase temporary files
 supabase/.temp/
+
+# Windows special files
+nul
+NUL

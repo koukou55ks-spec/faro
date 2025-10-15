@@ -233,6 +233,56 @@ export default function FaroMainPage() {
             </button>
           </div>
 
+          {/* Chat History - Directly under New Chat Button */}
+          {viewMode === 'chat' && (isSidebarOpen || window.innerWidth < 1024) && (
+            <div className="px-4 pt-3 pb-2 animate-fade-in">
+              <button
+                onClick={() => setIsChatHistoryOpen(!isChatHistoryOpen)}
+                className="w-full flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <span>履歴 ({conversations.length})</span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isChatHistoryOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isChatHistoryOpen && (
+                <div className="mt-2 space-y-1 max-h-64 overflow-y-auto animate-slide-in-bottom">
+                  {conversations.length === 0 ? (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">まだ会話がありません</p>
+                  ) : (
+                    conversations.map((conv) => (
+                      <button
+                        key={conv.id}
+                        onClick={() => handleSelectConversation(conv.id)}
+                        className={`group w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                          conv.id === currentConversationId
+                            ? 'bg-purple-50 dark:bg-purple-900/20 border-l-2 border-purple-500'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                            conv.id === currentConversationId ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate text-gray-900 dark:text-gray-100">{conv.title}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              {new Date(conv.updatedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                            </p>
+                          </div>
+                          <button
+                            onClick={(e) => handleDeleteConversation(conv.id, e)}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-all duration-200"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                          </button>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Navigation Menu */}
           <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
             {menuItems.map((item) => {
@@ -265,56 +315,6 @@ export default function FaroMainPage() {
                 </button>
               )
             })}
-
-            {/* Chat History */}
-            {viewMode === 'chat' && (isSidebarOpen || window.innerWidth < 1024) && (
-              <div className="mt-6 animate-fade-in">
-                <button
-                  onClick={() => setIsChatHistoryOpen(!isChatHistoryOpen)}
-                  className="w-full flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors px-3 py-2"
-                >
-                  <span>履歴</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isChatHistoryOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isChatHistoryOpen && (
-                  <div className="mt-2 space-y-1 animate-slide-in-bottom">
-                    {conversations.length === 0 ? (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">まだ会話がありません</p>
-                    ) : (
-                      conversations.map((conv) => (
-                        <button
-                          key={conv.id}
-                          onClick={() => handleSelectConversation(conv.id)}
-                          className={`group w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                            conv.id === currentConversationId
-                              ? 'bg-purple-50 dark:bg-purple-900/20 border-l-2 border-purple-500'
-                              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                          }`}
-                        >
-                          <div className="flex items-start gap-2">
-                            <MessageSquare className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                              conv.id === currentConversationId ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
-                            }`} />
-                            <div className="flex-1 min-w-0">
-                              <p className="truncate text-gray-900 dark:text-gray-100">{conv.title}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                {new Date(conv.updatedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
-                              </p>
-                            </div>
-                            <button
-                              onClick={(e) => handleDeleteConversation(conv.id, e)}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-all duration-200"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                            </button>
-                          </div>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
           </nav>
 
           {/* Sidebar Footer */}
