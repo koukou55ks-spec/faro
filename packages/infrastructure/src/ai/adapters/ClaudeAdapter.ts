@@ -61,7 +61,7 @@ export class ClaudeAdapter implements IAIProviderAdapter {
       throw new Error(`Claude API error: ${response.statusText}`)
     }
 
-    const data = await response.json()
+    const data = await response.json() as any
 
     return {
       content: data.content[0].text,
