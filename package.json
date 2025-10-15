@@ -6,6 +6,8 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:clean": "pnpm dev:kill && pnpm dev",
+    "dev:kill": "node -e \"require('child_process').exec(process.platform==='win32'?'netstat -ano | findstr :3000':'lsof -ti:3000 | xargs kill -9',()=>{})\"",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "vitest run",

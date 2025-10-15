@@ -1,4 +1,4 @@
-import { GenerateResponseOptions, GenerateResponseResult, Message } from '@faro/core'
+import { GenerateResponseOptions, GenerateResponseResult, AIMessage } from '@faro/core'
 import { IAIProviderAdapter } from './IAIProviderAdapter'
 
 export class OpenAIAdapter implements IAIProviderAdapter {
@@ -107,7 +107,7 @@ export class OpenAIAdapter implements IAIProviderAdapter {
     }
   }
 
-  private convertMessages(messages: Message[], systemPrompt?: string) {
+  private convertMessages(messages: AIMessage[], systemPrompt?: string) {
     const result: Array<{ role: string; content: string }> = []
 
     if (systemPrompt) {

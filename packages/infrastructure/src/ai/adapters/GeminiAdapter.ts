@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { GenerateResponseOptions, GenerateResponseResult, Message } from '@faro/core'
+import { GenerateResponseOptions, GenerateResponseResult, AIMessage } from '@faro/core'
 import { IAIProviderAdapter } from './IAIProviderAdapter'
 
 export class GeminiAdapter implements IAIProviderAdapter {
@@ -84,7 +84,7 @@ export class GeminiAdapter implements IAIProviderAdapter {
     }
   }
 
-  private convertMessagesToHistory(messages: Message[]) {
+  private convertMessagesToHistory(messages: AIMessage[]) {
     return messages.slice(0, -1).map((msg) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }],

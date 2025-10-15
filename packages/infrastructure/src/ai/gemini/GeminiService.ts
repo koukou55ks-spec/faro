@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { IAIService, GenerateResponseOptions, GenerateResponseResult, Message } from '@faro/core'
+import { IAIService, GenerateResponseOptions, GenerateResponseResult, AIMessage } from '@faro/core'
 
 export class GeminiService implements IAIService {
   private genAI: GoogleGenerativeAI
@@ -9,13 +9,27 @@ export class GeminiService implements IAIService {
     this.genAI = new GoogleGenerativeAI(apiKey)
   }
 
-  async generateResponse(options: GenerateResponseOptions): Promise<GenerateResponseResult> {
+  async generateResponse(prompt: string, conversationHistory?: Array<{role: string, content: string}>): Promise<string> {
+    const options: GenerateResponseOptions = {
+      conversationHistory: [...(conversationHistory || []), { role: 'user' as const, content: prompt }] as AIMessage[],
+    }
+    const result = await this.generateResponseWithOptions(options)
+    return result.content
+  }
+
+  async generateEmbedding(text: string): Promise<number[]> {
+    const embModel = this.genAI.getGenerativeModel({ model: 'text-embedding-004' })
+    const result = await embModel.embedContent(text)
+    return result.embedding.values
+  }
+
+  private async generateResponseWithOptions(options: GenerateResponseOptions): Promise<GenerateResponseResult> {
     const model = this.genAI.getGenerativeModel({
       model: this.model,
-      systemInstruction: {
+      systemInstruction: options.systemPrompt ? {
         parts: [{ text: options.systemPrompt }],
         role: "user"
-      }
+      } : undefined
     })
 
     const history = this.convertMessagesToHistory(options.conversationHistory)
@@ -43,10 +57,10 @@ export class GeminiService implements IAIService {
   async *streamResponse(options: GenerateResponseOptions): AsyncGenerator<string, void, unknown> {
     const model = this.genAI.getGenerativeModel({
       model: this.model,
-      systemInstruction: {
+      systemInstruction: options.systemPrompt ? {
         parts: [{ text: options.systemPrompt }],
         role: "user"
-      }
+      } : undefined
     })
 
     const history = this.convertMessagesToHistory(options.conversationHistory)
@@ -68,7 +82,7 @@ export class GeminiService implements IAIService {
     }
   }
 
-  private convertMessagesToHistory(messages: Message[]) {
+  private convertMessagesToHistory(messages: AIMessage[]) {
     // Exclude the last message as it will be sent separately
     return messages.slice(0, -1).map((msg) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',

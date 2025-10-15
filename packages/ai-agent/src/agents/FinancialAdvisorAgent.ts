@@ -24,27 +24,14 @@ export class FinancialAdvisorAgent {
     const systemPrompt = this.buildSystemPrompt()
     const userPrompt = this.buildUserPrompt(request)
 
-    const response = await this.aiService.generateResponse({
-      conversationHistory: [
-        {
-          id: 'system',
-          conversationId: 'financial-advisor',
-          role: 'system',
-          content: systemPrompt,
-          createdAt: new Date(),
-        } as any,
-        {
-          id: 'user',
-          conversationId: 'financial-advisor',
-          role: 'user',
-          content: userPrompt,
-          createdAt: new Date(),
-        } as any,
-      ],
-      systemPrompt,
-    })
+    const response = await this.aiService.generateResponse(userPrompt, [
+      {
+        role: 'system',
+        content: systemPrompt,
+      },
+    ])
 
-    return this.parseResponse(response.content)
+    return this.parseResponse(response)
   }
 
   private buildSystemPrompt(): string {

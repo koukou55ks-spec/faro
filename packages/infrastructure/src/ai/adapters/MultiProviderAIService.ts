@@ -1,4 +1,4 @@
-import { IAIService, GenerateResponseOptions, GenerateResponseResult } from '@faro/core'
+import { IAIService } from '@faro/core'
 import { IAIProviderAdapter } from './IAIProviderAdapter'
 
 /**
@@ -14,7 +14,22 @@ export class MultiProviderAIService implements IAIService {
     this.fallbackProviders = fallbackProviders
   }
 
-  async generateResponse(options: GenerateResponseOptions): Promise<GenerateResponseResult> {
+  async generateResponse(prompt: string, conversationHistory?: Array<{role: string, content: string}>): Promise<string> {
+    // Convert to new format for adapters
+    const options = {
+      conversationHistory: [...(conversationHistory || []), { role: 'user' as const, content: prompt }],
+    }
+    const result = await this.generateResponseWithOptions(options)
+    return result.content
+  }
+
+  async generateEmbedding(_text: string): Promise<number[]> {
+    // For now, return a dummy embedding
+    // TODO: Implement proper embedding generation
+    return new Array(768).fill(0).map(() => Math.random())
+  }
+
+  private async generateResponseWithOptions(options: any) {
     // Try primary provider first
     try {
       console.log(`[AI] Using primary provider: ${this.primaryProvider.name}`)
@@ -47,7 +62,7 @@ export class MultiProviderAIService implements IAIService {
     }
   }
 
-  async *streamResponse(options: GenerateResponseOptions): AsyncGenerator<string, void, unknown> {
+  async *streamResponse(options: any): AsyncGenerator<string, void, unknown> {
     // Try primary provider first
     try {
       console.log(`[AI] Streaming with primary provider: ${this.primaryProvider.name}`)

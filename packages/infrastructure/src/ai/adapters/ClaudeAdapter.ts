@@ -1,4 +1,4 @@
-import { GenerateResponseOptions, GenerateResponseResult, Message } from '@faro/core'
+import { GenerateResponseOptions, GenerateResponseResult, AIMessage } from '@faro/core'
 import { IAIProviderAdapter } from './IAIProviderAdapter'
 
 export class ClaudeAdapter implements IAIProviderAdapter {
@@ -65,7 +65,7 @@ export class ClaudeAdapter implements IAIProviderAdapter {
 
     return {
       content: data.content[0].text,
-      tokensUsed: data.usage?.input_tokens + data.usage?.output_tokens ?? 0,
+      tokensUsed: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
       model: this.model,
     }
   }
@@ -131,7 +131,7 @@ export class ClaudeAdapter implements IAIProviderAdapter {
     }
   }
 
-  private convertMessages(messages: Message[]) {
+  private convertMessages(messages: AIMessage[]) {
     return messages.map((msg) => ({
       role: msg.role === 'assistant' ? 'assistant' : 'user',
       content: msg.content,

@@ -15,7 +15,7 @@ export class GeminiEmbeddingService implements IEmbeddingService {
 
     return {
       embedding: result.embedding.values,
-      model: this.model,
+      dimension: result.embedding.values.length,
     }
   }
 
@@ -27,7 +27,7 @@ export class GeminiEmbeddingService implements IEmbeddingService {
         const result = await model.embedContent(text)
         return {
           embedding: result.embedding.values,
-          model: this.model,
+          dimension: result.embedding.values.length,
         }
       })
     )

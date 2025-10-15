@@ -6,6 +6,7 @@ export * from './domain/Conversation';
 export * from './interfaces/IConversationRepository';
 export * from './interfaces/IAIService';
 export * from './interfaces/IContextService';
+export * from './interfaces/types';
 
 // Use Cases
 export * from './usecases/SendMessageUseCase';

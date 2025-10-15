@@ -21,7 +21,7 @@ export class SendMessageUseCase {
     conversationId: string,
     userId: string,
     content: string,
-    sourceSelection?: SourceSelectionOptions
+    _sourceSelection?: SourceSelectionOptions
   ): Promise<MessageEntity> {
     // Create user message
     const userMessage = MessageEntity.create({

@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../lib/hooks/useAuth'
+import { useSubscription } from '../lib/hooks/useSubscription'
 import {
   Menu, Plus, Sparkles, X, ChevronRight, ChevronDown,
   FileText, Wallet, TrendingUp, MessageSquare, Trash2,
   Moon, Sun, Search, Bell, Settings, LogOut, User,
-  Home, BookOpen, PieChart, HelpCircle, Command
+  Home, BookOpen, PieChart, HelpCircle, Command, CreditCard
 } from 'lucide-react'
 import { NotesPanel } from '../src/features/notes/components/NotesPanel'
 import { ChatPanel } from '../src/features/chat/components/ChatPanel'
@@ -16,6 +17,8 @@ import { NotebookLMView } from '../src/features/documents/components/NotebookLMV
 import { useDocumentsStore } from '../src/features/documents/stores/documentsStore'
 import { KakeiboPanel } from '../src/features/kakeibo/components/KakeiboPanel'
 import { ReportPanel } from '../src/features/kakeibo/components/ReportPanel'
+import { PricingPlans } from '../src/features/subscription/components/PricingPlans'
+import { UsageIndicator } from '../src/features/subscription/components/UsageIndicator'
 import { useAppStore } from '../lib/store/useAppStore'
 import { createClient } from '@supabase/supabase-js'
 import { useAccessibility } from '../hooks/useAccessibility'
@@ -29,6 +32,7 @@ interface Message {
 
 export default function FaroMainPage() {
   const { user, loading } = useAuth()
+  const { subscription, isPro, isFree } = useSubscription()
   const { notes: guestNotes } = useGuestNotesStore()
   const { fetchDocuments, fetchCollections } = useDocumentsStore()
   const { viewMode, isSidebarOpen, setViewMode, setSidebarOpen, toggleSidebar } = useAppStore()
@@ -41,6 +45,7 @@ export default function FaroMainPage() {
   const { announce } = useAccessibility({ enableKeyboardShortcuts: true })
 
   const isGuest = !user
+  const currentPlan = subscription?.plan || 'free'
 
   // Theme management
   useEffect(() => {
@@ -147,9 +152,10 @@ export default function FaroMainPage() {
 
   const menuItems = [
     { id: 'chat', label: 'チャット', icon: MessageSquare, shortcut: '⌘K' },
-    { id: 'notebook', label: 'ノートブック', icon: BookOpen, shortcut: '⌘N' },
+    { id: 'notebook', label: 'ノート', icon: BookOpen, shortcut: '⌘N' },
     { id: 'kakeibo', label: '家計簿', icon: Wallet, shortcut: '⌘B' },
     { id: 'report', label: 'レポート', icon: PieChart, shortcut: '⌘R' },
+    { id: 'pricing', label: '料金プラン', icon: CreditCard, shortcut: '⌘P' },
   ]
 
   if (loading) {
@@ -331,6 +337,9 @@ export default function FaroMainPage() {
             })}
           </nav>
 
+          {/* Usage Indicator */}
+          {user && <UsageIndicator />}
+
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50">
             {(isSidebarOpen || window.innerWidth < 1024) ? (
@@ -387,9 +396,10 @@ export default function FaroMainPage() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {viewMode === 'chat' ? 'AI チャット' :
-                   viewMode === 'notebook' ? 'ノートブック' :
+                   viewMode === 'notebook' ? 'ノート' :
                    viewMode === 'kakeibo' ? '家計簿' :
                    viewMode === 'report' ? 'レポート' :
+                   viewMode === 'pricing' ? '料金プラン' :
                    'Faro'}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -454,6 +464,10 @@ export default function FaroMainPage() {
             ) : viewMode === 'report' ? (
               <div className="h-full">
                 <ReportPanel userId={user?.id} />
+              </div>
+            ) : viewMode === 'pricing' ? (
+              <div className="h-full overflow-y-auto">
+                <PricingPlans currentPlan={currentPlan} />
               </div>
             ) : null}
           </div>

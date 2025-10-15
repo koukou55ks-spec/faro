@@ -156,8 +156,8 @@ export class SupabaseContextService implements IContextService {
 
     console.log('[SupabaseContextService] Context retrieved:', {
       query,
-      notesCount: context.notes.length,
-      messagesCount: context.messages.length,
+      notesCount: context.notes?.length || 0,
+      messagesCount: context.messages?.length || 0,
       documentChunksCount: context.documentChunks?.length || 0,
     })
 
@@ -184,7 +184,7 @@ export class SupabaseContextService implements IContextService {
         return acc
       }, {} as Record<string, { title: string; chunks: typeof extendedContext.documentChunks }>)
 
-      Object.entries(docGroups).forEach(([docId, doc]) => {
+      Object.entries(docGroups).forEach(([_, doc]) => {
         parts.push(`\n### ${doc.title}`)
         doc.chunks.forEach((chunk, i) => {
           const pageInfo = chunk.pageNumber ? ` (Page ${chunk.pageNumber})` : ''
@@ -195,9 +195,9 @@ export class SupabaseContextService implements IContextService {
       })
     }
 
-    if (context.notes.length > 0) {
+    if (context.notes && context.notes.length > 0) {
       parts.push('\n## 📝 Relevant Notes from User')
-      context.notes.forEach((note, i) => {
+      context.notes.forEach((note: any) => {
         parts.push(`\n### ${note.title}`)
         parts.push(note.content)
         if (note.similarity) {
@@ -206,9 +206,9 @@ export class SupabaseContextService implements IContextService {
       })
     }
 
-    if (context.messages.length > 0) {
+    if (context.messages && context.messages.length > 0) {
       parts.push('\n## 💬 Relevant Past Conversations')
-      context.messages.forEach((msg, i) => {
+      context.messages.forEach((msg: any, i: number) => {
         parts.push(`${i + 1}. ${msg.content}`)
         if (msg.similarity) {
           parts.push(`   _Relevance: ${(msg.similarity * 100).toFixed(0)}%_`)
