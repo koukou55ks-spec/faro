@@ -58,9 +58,13 @@ export default function FaroMainPage() {
     localStorage.setItem('theme', newMode ? 'dark' : 'light')
   }
 
-  // Auto-open sidebar on desktop
+  // Auto-open sidebar on desktop, close on mobile
+  const [isMobile, setIsMobile] = useState(false)
+
   useEffect(() => {
     const handleResize = () => {
+      const mobile = window.innerWidth < 1024
+      setIsMobile(mobile)
       if (window.innerWidth >= 1024) {
         setSidebarOpen(true)
       } else {
@@ -97,6 +101,13 @@ export default function FaroMainPage() {
     }
   }, [conversations.length, viewMode, createConversation])
 
+  // Auto-close sidebar on mobile when switching views
+  useEffect(() => {
+    if (isMobile && viewMode) {
+      setSidebarOpen(false)
+    }
+  }, [viewMode, isMobile, setSidebarOpen])
+
   // Time update
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
@@ -107,7 +118,7 @@ export default function FaroMainPage() {
     createConversation()
     setViewMode('chat')
     announce('新しいチャットを作成しました')
-    if (window.innerWidth < 1024) {
+    if (isMobile) {
       setSidebarOpen(false)
     }
   }
@@ -115,7 +126,7 @@ export default function FaroMainPage() {
   const handleSelectConversation = (convId: string) => {
     setCurrentConversation(convId)
     setViewMode('chat')
-    if (window.innerWidth < 1024) {
+    if (isMobile) {
       setSidebarOpen(false)
     }
   }
@@ -296,7 +307,7 @@ export default function FaroMainPage() {
                   key={item.id}
                   onClick={() => {
                     setViewMode(item.id as any)
-                    if (window.innerWidth < 1024) setSidebarOpen(false)
+                    if (isMobile) setSidebarOpen(false)
                   }}
                   className={`w-full flex items-center ${!isSidebarOpen && window.innerWidth >= 1024 ? 'justify-center' : 'justify-between'} px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
                     isActive
