@@ -249,10 +249,9 @@ export default function FaroMainPage() {
                     <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">まだ会話がありません</p>
                   ) : (
                     conversations.map((conv) => (
-                      <button
+                      <div
                         key={conv.id}
-                        onClick={() => handleSelectConversation(conv.id)}
-                        className={`group w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                        className={`group w-full px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                           conv.id === currentConversationId
                             ? 'bg-purple-50 dark:bg-purple-900/20 border-l-2 border-purple-500'
                             : 'hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -262,20 +261,24 @@ export default function FaroMainPage() {
                           <MessageSquare className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
                             conv.id === currentConversationId ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
                           }`} />
-                          <div className="flex-1 min-w-0">
+                          <button
+                            onClick={() => handleSelectConversation(conv.id)}
+                            className="flex-1 min-w-0 text-left"
+                          >
                             <p className="truncate text-gray-900 dark:text-gray-100">{conv.title}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                               {new Date(conv.updatedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
                             </p>
-                          </div>
+                          </button>
                           <button
                             onClick={(e) => handleDeleteConversation(conv.id, e)}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-all duration-200"
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-all duration-200 flex-shrink-0"
+                            aria-label="会話を削除"
                           >
                             <Trash2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                           </button>
                         </div>
-                      </button>
+                      </div>
                     ))
                   )}
                 </div>
