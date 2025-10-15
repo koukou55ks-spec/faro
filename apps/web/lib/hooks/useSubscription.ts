@@ -24,6 +24,9 @@ export function useSubscription() {
 
   useEffect(() => {
     async function fetchSubscription() {
+      // Check for mock subscription in localStorage (開発用)
+      const mockPlan = localStorage.getItem('mockSubscriptionPlan')
+
       if (!user) {
         // Guest user - free plan
         setSubscription({
@@ -36,6 +39,26 @@ export function useSubscription() {
           plan: 'free',
           current_period_start: null,
           current_period_end: null,
+          cancel_at_period_end: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        setLoading(false)
+        return
+      }
+
+      // If mock plan is set (development mode)
+      if (mockPlan === 'pro' && process.env.NODE_ENV === 'development') {
+        setSubscription({
+          id: 'mock-' + user.id,
+          user_id: user.id,
+          stripe_customer_id: 'mock_customer',
+          stripe_subscription_id: 'mock_subscription',
+          stripe_price_id: 'mock_price',
+          status: 'active',
+          plan: 'pro',
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           cancel_at_period_end: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
