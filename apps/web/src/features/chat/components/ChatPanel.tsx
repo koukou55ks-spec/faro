@@ -191,34 +191,39 @@ export function ChatPanel({ userId }: ChatPanelProps) {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-4 py-6">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
               {/* Welcome Hero */}
-              <div className="text-center mb-8 animate-fadeIn">
-                <div className="mb-4 relative inline-block">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-xl">
-                    <Sparkles className="w-8 h-8 text-white" />
+              <div className="text-center mb-10 animate-fadeIn">
+                <div className="mb-6 relative inline-block">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-blue-500 rounded-3xl blur-2xl opacity-30 animate-pulse"></div>
+                  <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                    <Sparkles className="w-10 h-10 text-white" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-gray-900 dark:text-gray-100 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600">
                   何でも聞いてください
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Faroがあなたの金融相談をサポートします
+                <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+                  Faroがあなたの金融相談を<br className="sm:hidden" />
+                  プロフェッショナルにサポートします
                 </p>
               </div>
 
               {/* Suggestions */}
               <div className="w-full max-w-2xl animate-fadeIn" style={{ animationDelay: '0.1s' }}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {SUGGESTIONS.map((suggestion, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleSuggestionClick(suggestion.text)}
-                      className="group p-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 text-left"
+                      className="group relative p-4 rounded-2xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-lg transition-all duration-300 text-left overflow-hidden"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{suggestion.icon}</span>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-300">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/10 dark:to-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="relative flex items-center gap-3">
+                        <div className="text-2xl flex-shrink-0 transform group-hover:scale-110 transition-transform duration-300">
+                          {suggestion.icon}
+                        </div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
                           {suggestion.text}
                         </p>
                       </div>
@@ -230,32 +235,44 @@ export function ChatPanel({ userId }: ChatPanelProps) {
           ) : (
             <>
               {messages.map((msg, idx) => (
-                <div key={idx} className="mb-6 animate-fadeIn">
+                <div key={idx} className="mb-8 animate-fadeIn">
                   {msg.role === 'user' ? (
-                    // User Message - Simple, no avatar
+                    // User Message - Clean bubble design
                     <div className="flex justify-end">
-                      <div className="max-w-[80%] bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2.5">
-                        <div className="text-gray-900 dark:text-gray-100 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
-                          {msg.content}
+                      <div className="max-w-[85%] sm:max-w-[75%]">
+                        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-3xl rounded-tr-md px-5 py-3 shadow-md">
+                          <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                            {msg.content}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-right px-1">
+                          {new Date(msg.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
                     </div>
                   ) : (
-                    // Assistant Message
-                    <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 flex-shrink-0 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mt-0.5">
-                        <Sparkles className="w-4 h-4 text-white" />
+                    // Assistant Message - Professional card style
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-8 h-8 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
+                        <Sparkles className="w-4.5 h-4.5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                          <MarkdownRenderer content={msg.content} />
-                        </div>
-                        {msg.expertMode && (
-                          <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg text-xs font-medium">
-                            <span>⚖️</span>
-                            <span>エキスパートモード</span>
+                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-3xl rounded-tl-md px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700/50">
+                          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-headings:mb-2 prose-headings:mt-3">
+                            <MarkdownRenderer content={msg.content} />
                           </div>
-                        )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5 px-1">
+                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                            {new Date(msg.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          {msg.expertMode && (
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                              <span>⚖️</span>
+                              <span>エキスパート</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -263,14 +280,23 @@ export function ChatPanel({ userId }: ChatPanelProps) {
               ))}
 
               {isLoading && (
-                <div className="flex items-start gap-3">
-                  <div className="w-7 h-7 flex-shrink-0 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-white animate-pulse" />
-                  </div>
-                  <div className="flex gap-1 mt-2">
-                    <span className="typing-dot"></span>
-                    <span className="typing-dot"></span>
-                    <span className="typing-dot"></span>
+                <div className="mb-8 animate-fadeIn">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-8 h-8 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
+                      <Sparkles className="w-4.5 h-4.5 text-white animate-pulse" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-3xl rounded-tl-md px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700/50">
+                        <div className="flex gap-1.5">
+                          <span className="typing-dot"></span>
+                          <span className="typing-dot"></span>
+                          <span className="typing-dot"></span>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 px-1">
+                        考え中...
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -281,49 +307,12 @@ export function ChatPanel({ userId }: ChatPanelProps) {
         </div>
       </div>
 
-      {/* Input Area - ChatGPT Style */}
-      <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="relative">
-            {/* Textarea */}
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="メッセージを送信"
-              rows={1}
-              disabled={isLoading}
-              className="w-full pl-4 pr-12 py-3 border border-gray-300 dark:border-gray-700 rounded-3xl bg-white dark:bg-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-[15px] leading-relaxed"
-              style={{
-                minHeight: '48px',
-                maxHeight: '200px',
-                overflow: input.split('\n').length > 1 ? 'auto' : 'hidden'
-              }}
-            />
-
-            {/* Send Button - ChatGPT Style */}
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className={`absolute right-2 bottom-2 p-2 rounded-full transition-all ${
-                input.trim() && !isLoading
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-              }`}
-              aria-label="送信"
-            >
-              {isLoading ? (
-                <StopCircle className="w-5 h-5" />
-              ) : (
-                <ArrowUp className="w-5 h-5" />
-              )}
-            </button>
-          </div>
-
-          {/* Expert Mode Toggle + Info */}
-          <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-            <label className="flex items-center gap-2 cursor-pointer group">
+      {/* Input Area - Modern ChatGPT/Claude Style */}
+      <div className="border-t border-gray-200 dark:border-gray-800 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950">
+        <div className="max-w-3xl mx-auto px-4 py-5">
+          {/* Expert Mode Toggle - Moved to top */}
+          <div className="mb-3 flex items-center gap-3">
+            <label className="flex items-center gap-2.5 cursor-pointer group px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-all shadow-sm hover:shadow">
               <div className="relative">
                 <input
                   type="checkbox"
@@ -331,13 +320,72 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                   onChange={(e) => setExpertMode(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-8 h-5 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-purple-600 transition-colors"></div>
-                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-3"></div>
+                <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-purple-600 transition-all duration-300"></div>
+                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-4 shadow-md"></div>
               </div>
-              <span className="group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
-                エキスパートモード
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors flex items-center gap-1">
+                <span>⚖️</span>
+                <span>エキスパートモード</span>
               </span>
             </label>
+            {expertMode && (
+              <span className="text-xs text-purple-600 dark:text-purple-400 animate-fadeIn">
+                専門的な金融アドバイスを提供します
+              </span>
+            )}
+          </div>
+
+          {/* Input Container */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 focus-within:border-purple-500 dark:focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20 transition-all">
+            {/* Textarea */}
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Faroに質問してください..."
+              rows={1}
+              disabled={isLoading}
+              className="w-full pl-5 pr-14 py-4 bg-transparent resize-none focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-[15px] leading-relaxed"
+              style={{
+                minHeight: '56px',
+                maxHeight: '200px',
+                overflow: input.split('\n').length > 1 ? 'auto' : 'hidden'
+              }}
+            />
+
+            {/* Send Button - Modern Floating Style */}
+            <div className="absolute right-2 bottom-2 flex items-center gap-2">
+              {input.trim() && (
+                <span className="text-xs text-gray-400 dark:text-gray-500 animate-fadeIn hidden sm:inline">
+                  Enter で送信
+                </span>
+              )}
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+                className={`p-2.5 rounded-xl transition-all duration-200 ${
+                  input.trim() && !isLoading
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                }`}
+                aria-label={isLoading ? '停止' : '送信'}
+              >
+                {isLoading ? (
+                  <StopCircle className="w-5 h-5 animate-pulse" />
+                ) : (
+                  <ArrowUp className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Helper Text */}
+          <div className="mt-2.5 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
+            <span className="flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              <span>AI搭載の金融パートナー</span>
+            </span>
             <span className="hidden sm:inline">
               Shift + Enter で改行
             </span>
