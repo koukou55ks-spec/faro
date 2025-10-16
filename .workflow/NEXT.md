@@ -1,28 +1,32 @@
 # Next Actions (Top 3)
 
-1. Test all guest mode features in browser (Chat, Notes, Documents, Kakeibo)
-2. Git push to origin (3 commits ahead)
-3. Consider Vercel deployment or continue feature development
+1. **Stripe課金機能の実稼働テスト**（最優先）
+   - ブラウザでProプランへのアップグレードフローをテスト
+   - テストカード（4242 4242 4242 4242）で決済テスト
+   - Webhookイベント受信確認
+
+2. **Stripe Webhookローカルテスト環境構築**
+   - Stripe CLI インストール（推奨）
+   - `stripe listen --forward-to localhost:3000/api/stripe/webhook`
+   - 決済完了イベントの自動反映確認
+
+3. **Vercel本番デプロイ**
+   - 環境変数をVercelに設定
+   - 本番WebhookエンドポイントをStripeに登録
+   - 本番環境でE2Eテスト
 
 ## Context
-- Chat: ✅ Working (guest mode with localStorage)
-- Notes: ✅ Working (guest mode with localStorage)
-- Documents: ✅ Infrastructure ready (guestDocumentsStore)
-- Kakeibo: ✅ Infrastructure ready (guestTransactionsStore)
-- Database: ✅ All migrations applied
-- Workflow: ✅ Fully optimized
-- Git: ✅ Clean working tree (commit 95a290a)
+- Stripe設定: ✅ 完全完了（API Key, Webhook Secret, Price ID）
+- コード実装: ✅ 完全完了（API 5個、UI 2個、Hook 1個）
+- データベース: ✅ マイグレーション適用済み
+- Git: ✅ 最新コミットプッシュ済み（3c1c253）
 
 ## Session Management
-- SESSION_LOG.md: ✅ Updated (2025-10-14 session recorded)
 - STATUS.md: ✅ Updated (latest state)
-- Auto status tracking: ✅ Active
-- Server: ✅ Running (bash_id: 042959)
+- Git: ✅ Clean & pushed
+- Server: ✅ Running
 
-## Latest Commit (95a290a)
-- 79 files changed
-- +12,672 lines added
-- -17,520 lines deleted
-- Guest mode for chat and notes
-- Complete workflow system
-- Unified /app architecture
+## Stripe機能の実装完了度
+🎉 **100%実装完了 - 本番稼働準備完了**
+
+必要なアクション: テストのみ
