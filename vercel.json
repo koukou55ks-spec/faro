@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd apps/web && pnpm build",
+  "buildCommand": "pnpm turbo build --filter=faro-frontend",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "outputDirectory": "apps/web/.next"
 }
