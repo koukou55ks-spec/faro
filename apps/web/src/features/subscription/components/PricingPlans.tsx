@@ -240,16 +240,16 @@ export function PricingPlans({ currentPlan = 'free', onUpgrade }: PricingPlansPr
                 } transition-all duration-300 hover:shadow-xl`}
               >
                 {isPopular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-400 text-gray-900 text-sm font-bold rounded-full">
+                  <div className="absolute -top-3 -right-3 px-3 py-1 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full shadow-lg">
                     おすすめ
                   </div>
                 )}
 
                 {/* Plan Header */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-3 mb-2">
+                <div className="mb-8">
+                  <div className="flex items-center gap-3 mb-3">
                     <div
-                      className={`p-2 rounded-xl ${
+                      className={`p-3 rounded-xl ${
                         isPopular ? 'bg-white/20' : 'bg-purple-100 dark:bg-purple-900/30'
                       }`}
                     >
@@ -321,7 +321,7 @@ export function PricingPlans({ currentPlan = 'free', onUpgrade }: PricingPlansPr
                 <button
                   onClick={() => handleSubscribe(plan.priceId || null, plan.id)}
                   disabled={isCurrentPlan || loading}
-                  className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                  className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-200 min-h-[52px] text-base ${
                     isCurrentPlan
                       ? isPopular
                         ? 'bg-white/20 text-white cursor-not-allowed'

@@ -151,11 +151,11 @@ export default function FaroMainPage() {
   }
 
   const menuItems = [
-    { id: 'chat', label: 'チャット', icon: MessageSquare, shortcut: '⌘K' },
-    { id: 'notebook', label: 'ノート', icon: BookOpen, shortcut: '⌘N' },
-    { id: 'kakeibo', label: '家計簿', icon: Wallet, shortcut: '⌘B' },
-    { id: 'report', label: 'レポート', icon: PieChart, shortcut: '⌘R' },
-    { id: 'pricing', label: '料金プラン', icon: CreditCard, shortcut: '⌘P' },
+    { id: 'chat', label: 'チャット', icon: MessageSquare },
+    { id: 'notebook', label: 'ノート', icon: BookOpen },
+    { id: 'kakeibo', label: '家計簿', icon: Wallet },
+    { id: 'report', label: 'レポート', icon: PieChart },
+    { id: 'pricing', label: '料金プラン', icon: CreditCard },
   ]
 
   if (loading) {
@@ -243,7 +243,7 @@ export default function FaroMainPage() {
           <div className={`px-4 ${!isSidebarOpen && window.innerWidth >= 1024 ? 'lg:px-2' : ''}`}>
             <button
               onClick={handleNewChat}
-              className={`w-full flex items-center ${!isSidebarOpen && window.innerWidth >= 1024 ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl font-medium bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 group`}
+              className={`w-full flex items-center ${!isSidebarOpen && window.innerWidth >= 1024 ? 'justify-center' : 'gap-3'} px-4 py-3.5 rounded-xl font-medium bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 group active:scale-95 min-h-[44px]`}
             >
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" />
               {(isSidebarOpen || window.innerWidth < 1024) && <span className="animate-fade-in">新規チャット</span>}
@@ -315,7 +315,7 @@ export default function FaroMainPage() {
                     setViewMode(item.id as any)
                     if (isMobile) setSidebarOpen(false)
                   }}
-                  className={`w-full flex items-center ${!isSidebarOpen && window.innerWidth >= 1024 ? 'justify-center' : 'justify-between'} px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                  className={`w-full flex items-center ${!isSidebarOpen && window.innerWidth >= 1024 ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group active:scale-95 min-h-[44px] ${
                     isActive
                       ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
@@ -327,11 +327,6 @@ export default function FaroMainPage() {
                       <span className="animate-fade-in">{item.label}</span>
                     )}
                   </div>
-                  {(isSidebarOpen || window.innerWidth < 1024) && item.shortcut && (
-                    <kbd className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded animate-fade-in">
-                      {item.shortcut}
-                    </kbd>
-                  )}
                 </button>
               )
             })}
@@ -409,12 +404,6 @@ export default function FaroMainPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Command Palette Trigger */}
-              <button className="hidden lg:flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
-                <Command className="w-4 h-4" />
-                <span>⌘K</span>
-              </button>
-
               {/* Notifications */}
               <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group">
                 <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300 group-hover:scale-110 transition-transform" />
