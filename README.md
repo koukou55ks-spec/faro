@@ -9,8 +9,11 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E)](https://supabase.com/)
 [![Gemini](https://img.shields.io/badge/Gemini-2.0_Flash-4285F4)](https://ai.google.dev/)
+[![Stripe](https://img.shields.io/badge/Stripe-Integrated-008CDD)](https://stripe.com/)
 
 [English](#english) | [日本語](#japanese)
+
+🚀 **Live Demo**: [https://faro10.vercel.app](https://faro10.vercel.app)
 
 </div>
 
