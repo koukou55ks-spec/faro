@@ -126,3 +126,8 @@ supabase/.temp/
 # Windows special files
 nul
 NUL
+
+# Stripe CLI
+stripe.exe
+stripe-cli.zip
+*.exe
