@@ -4,16 +4,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../lib/hooks/useAuth'
 import { useSubscription } from '../lib/hooks/useSubscription'
 import {
-  MessageSquare, Search, Calculator, User as UserIcon, Users,
-  Menu, Plus, Moon, Sun, Bell, Settings, LogOut, X, ChevronDown,
-  FileText, TrendingUp, Receipt, Camera, PieChart, Trash2
+  MessageSquare, Search, User as UserIcon, Users, Sparkles,
+  Menu, Plus, Moon, Sun, X, ChevronDown, Trash2
 } from 'lucide-react'
 import { ChatPanel } from '../src/features/chat/components/ChatPanel'
 import { NotesPanel } from '../src/features/notes/components/NotesPanel'
-import { KakeiboPanel } from '../src/features/kakeibo/components/KakeiboPanel'
 import { useChatStore } from '../src/features/chat/stores/chatStore'
 import { useGuestNotesStore } from '../src/features/notes/stores/guestNotesStore'
-import { useDocumentsStore } from '../src/features/documents/stores/documentsStore'
 import { useAppStore } from '../lib/store/useAppStore'
 import { createClient } from '@supabase/supabase-js'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -21,10 +18,10 @@ import { UsageIndicator } from '../src/features/subscription/components/UsageInd
 import dynamic from 'next/dynamic'
 
 // Import pages with dynamic loading for better performance
-const SearchPage = dynamic(() => import('./search/page'), { ssr: false })
-const ToolsPage = dynamic(() => import('./tools/page'), { ssr: false })
-const MyPage = dynamic(() => import('./mypage/page'), { ssr: false })
-const ConnectPage = dynamic(() => import('./connect/page'), { ssr: false })
+const SearchPage = dynamic(() => import('./search/page').then(mod => mod.default), { ssr: false })
+const ToolsPage = dynamic(() => import('./tools/page').then(mod => mod.default), { ssr: false })
+const MyPage = dynamic(() => import('./mypage/page').then(mod => mod.default), { ssr: false })
+const ConnectPage = dynamic(() => import('./connect/page').then(mod => mod.default), { ssr: false })
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>
@@ -36,7 +33,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: MessageSquare, label: 'ホーム', id: 'home' },
   { icon: Search, label: 'さがす', id: 'search' },
-  { icon: Calculator, label: 'ツール', id: 'tools' },
+  { icon: Sparkles, label: 'エージェント', id: 'tools' },
   { icon: UserIcon, label: 'マイページ', id: 'mypage' },
   { icon: Users, label: 'つながる', id: 'connect' }
 ]
@@ -45,7 +42,6 @@ export default function MainApp() {
   const { user, loading } = useAuth()
   const { subscription, isPro, isFree } = useSubscription()
   const { notes: guestNotes } = useGuestNotesStore()
-  const { fetchDocuments, fetchCollections } = useDocumentsStore()
   const { viewMode, setViewMode } = useAppStore()
   const {
     conversations,
@@ -115,12 +111,10 @@ export default function MainApp() {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.access_token) {
           setAuthToken(session.access_token)
-          fetchDocuments(session.access_token)
-          fetchCollections(session.access_token)
         }
       })
     }
-  }, [user, fetchDocuments, fetchCollections])
+  }, [user])
 
   const handleNewConversation = () => {
     const newConversationId = createConversation()
@@ -256,9 +250,6 @@ export default function MainApp() {
                     >
                       {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                     </button>
-                    <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
-                      <Bell className="w-5 h-5" />
-                    </button>
                   </div>
                 </div>
               </div>
@@ -342,32 +333,7 @@ export default function MainApp() {
         return <SearchPage />
 
       case 'tools':
-        return (
-          <div className="flex flex-col lg:flex-row h-full">
-            <div className="flex-1">
-              <ToolsPage />
-            </div>
-            {/* 家計簿機能をデスクトップで表示 */}
-            {!isMobile && viewMode === 'kakeibo' && (
-              <div className="w-96 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-                <div className="h-full flex flex-col">
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">経費管理</h2>
-                    <button
-                      onClick={() => setViewMode('tools')}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <KakeiboPanel />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )
+        return <ToolsPage />
 
       case 'mypage':
         return (

@@ -201,10 +201,16 @@ export default function ConnectPage() {
                   </div>
 
                   <div className="mt-3 flex space-x-2">
-                    <button className="flex-1 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium">
+                    <button
+                      className="flex-1 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium"
+                      onClick={() => alert('税理士相談機能は準備中です')}
+                    >
                       相談する
                     </button>
-                    <button className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+                    <button
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
+                      onClick={() => alert('メッセージ機能は準備中です')}
+                    >
                       <MessageSquare className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </button>
                   </div>
@@ -221,7 +227,10 @@ export default function ConnectPage() {
             <p className="text-white/90 text-sm mb-3">
               全国1,000人以上の税理士から最適な専門家をご紹介
             </p>
-            <button className="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium text-sm">
+            <button
+              className="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium text-sm"
+              onClick={() => alert('税理士検索機能は準備中です')}
+            >
               無料で税理士を探す →
             </button>
           </div>
@@ -286,7 +295,10 @@ export default function ConnectPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
               機能・価格・使いやすさを徹底比較
             </p>
-            <button className="w-full py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium text-sm">
+            <button
+              className="w-full py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium text-sm"
+              onClick={() => alert('比較表機能は準備中です')}
+            >
               ツール比較表を見る →
             </button>
           </div>

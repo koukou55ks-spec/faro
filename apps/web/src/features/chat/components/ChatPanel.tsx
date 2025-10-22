@@ -2,18 +2,15 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useChatStore, Message } from '../stores/chatStore'
-import { useGuestNotesStore } from '../../notes/stores/guestNotesStore'
-import { useDocumentsStore } from '../../documents/stores/documentsStore'
 import { MarkdownRenderer } from './MarkdownRenderer'
-import { Send, Sparkles, ArrowUp, StopCircle, Copy, Check, Paperclip, X, ChevronDown, FileText, Folder, Edit2, RefreshCw, Trash2, ArrowDown, Zap, AlertCircle } from 'lucide-react'
-import { ChatMessageSkeleton } from '../../../../components/LoadingSkeleton'
+import { Send, Sparkles, StopCircle, Copy, Check, Edit2, RefreshCw, Trash2, ArrowDown } from 'lucide-react'
 import { useAuthStore } from '../../../../lib/store/useAuthStore'
 
 interface ChatPanelProps {
   userId?: string
 }
 
-// サジェスチョン（金融相談のよくある例）
+// サジェスチョン
 const SUGGESTIONS = [
   { text: '103万円の壁について教えて', icon: '💰' },
   { text: '確定申告の準備を手伝って', icon: '📊' },
@@ -29,39 +26,14 @@ export function ChatPanel({ userId }: ChatPanelProps) {
     setLoading,
   } = useChatStore()
 
-  const { notes: guestNotes } = useGuestNotesStore()
-  const {
-    documents,
-    collections,
-    selectedDocuments,
-    selectedCollections,
-    toggleDocumentSelection,
-    toggleCollectionSelection,
-    clearSelection,
-  } = useDocumentsStore()
-
   const [input, setInput] = useState('')
-  const [expertMode, setExpertMode] = useState(false)
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null)
-  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
-  const [isSourceModalOpen, setIsSourceModalOpen] = useState(false)
-  const [includeNotes, setIncludeNotes] = useState(true)
-  const [includeMessages, setIncludeMessages] = useState(true)
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null)
   const [editingContent, setEditingContent] = useState('')
   const [showScrollButton, setShowScrollButton] = useState(false)
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [usageData, setUsageData] = useState<{
-    allowed: boolean
-    plan: string
-    limit: number
-    used: number
-    remaining: number
-  } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
   const messages = getCurrentMessages()
@@ -95,36 +67,6 @@ export function ChatPanel({ userId }: ChatPanelProps) {
     }
   }, [input])
 
-  // Fetch usage data for authenticated users
-  useEffect(() => {
-    async function fetchUsage() {
-      if (!token || isGuest) {
-        setUsageData(null)
-        return
-      }
-
-      try {
-        const response = await fetch('/api/usage/check', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ type: 'ai_message' }),
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          setUsageData(data)
-        }
-      } catch (error) {
-        console.error('[ChatPanel] Error fetching usage:', error)
-      }
-    }
-
-    fetchUsage()
-  }, [token, isGuest, messages.length])
-
   const handleStop = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -135,12 +77,6 @@ export function ChatPanel({ userId }: ChatPanelProps) {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return
-
-    // Check usage limit for authenticated users
-    if (!isGuest && usageData && !usageData.allowed) {
-      setShowUpgradeModal(true)
-      return
-    }
 
     const userMessage: Message = {
       role: 'user',
@@ -165,18 +101,7 @@ export function ChatPanel({ userId }: ChatPanelProps) {
       const requestBody: any = {
         message: userInput,
         userId: userId || 'anonymous',
-        expertMode: expertMode,
         stream: true,
-        sourceSelection: {
-          documents: selectedDocuments,
-          collections: selectedCollections,
-          includeNotes: includeNotes,
-          includeMessages: includeMessages,
-        },
-      }
-
-      if (isGuest && guestNotes.length > 0) {
-        requestBody.guestNotes = guestNotes
       }
 
       const response = await fetch('/api/chat', {
@@ -197,7 +122,6 @@ export function ChatPanel({ userId }: ChatPanelProps) {
           role: 'assistant',
           content: '',
           timestamp: new Date().toISOString(),
-          expertMode: expertMode,
         }
         addMessage(assistantMessage)
 
@@ -251,30 +175,12 @@ export function ChatPanel({ userId }: ChatPanelProps) {
           role: 'assistant',
           content: data.response || data.data?.assistantMessage?.content || 'No response',
           timestamp: new Date().toISOString(),
-          expertMode: expertMode,
         }
         addMessage(assistantMessage)
-      }
-
-      // Track usage for authenticated users
-      if (!isGuest && token) {
-        try {
-          await fetch('/api/usage/track', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({ type: 'ai_message' }),
-          })
-        } catch (error) {
-          console.error('[ChatPanel] Error tracking usage:', error)
-        }
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('[ChatPanel] Request aborted by user')
-        // User intentionally stopped, no error message needed
       } else {
         console.error('Error sending message:', error)
         const errorMessage: Message = {
@@ -310,22 +216,6 @@ export function ChatPanel({ userId }: ChatPanelProps) {
     } catch (error) {
       console.error('[ChatPanel] Failed to copy message:', error)
     }
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files) {
-      const newFiles = Array.from(files)
-      setAttachedFiles(prev => [...prev, ...newFiles])
-    }
-  }
-
-  const handleRemoveFile = (index: number) => {
-    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleAttachClick = () => {
-    fileInputRef.current?.click()
   }
 
   const handleEditMessage = (index: number, content: string) => {
@@ -384,34 +274,18 @@ export function ChatPanel({ userId }: ChatPanelProps) {
   }
 
   const handleRegenerateResponse = async (index: number) => {
-    // Find the last user message before this assistant message
     const userMessageIndex = messages.slice(0, index).findLastIndex(msg => msg.role === 'user')
     if (userMessageIndex === -1) return
 
     const userMessage = messages[userMessageIndex]
-
-    // Delete the assistant message
     handleDeleteMessage(index)
-
-    // Resend the user message
     setLoading(true)
 
     try {
       const requestBody: any = {
         message: userMessage.content,
         userId: userId || 'anonymous',
-        expertMode: expertMode,
         stream: true,
-        sourceSelection: {
-          documents: selectedDocuments,
-          collections: selectedCollections,
-          includeNotes: includeNotes,
-          includeMessages: includeMessages,
-        },
-      }
-
-      if (isGuest && guestNotes.length > 0) {
-        requestBody.guestNotes = guestNotes
       }
 
       const response = await fetch('/api/chat', {
@@ -431,7 +305,6 @@ export function ChatPanel({ userId }: ChatPanelProps) {
           role: 'assistant',
           content: '',
           timestamp: new Date().toISOString(),
-          expertMode: expertMode,
         }
         addMessage(assistantMessage)
 
@@ -497,199 +370,8 @@ export function ChatPanel({ userId }: ChatPanelProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const selectedSourcesCount = selectedDocuments.length + selectedCollections.length + (includeNotes ? 1 : 0) + (includeMessages ? 1 : 0)
-
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900">
-      {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-scaleIn">
-            <div className="p-6">
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                  <Zap className="w-8 h-8 text-white" />
-                </div>
-              </div>
-              <h3 className="text-xl font-bold text-center text-gray-900 dark:text-gray-100 mb-2">
-                無料プランの上限に達しました
-              </h3>
-              <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
-                今月のAIメッセージ数が上限の{usageData?.limit}回に達しました。<br />
-                Proプランにアップグレードして無制限に利用しましょう。
-              </p>
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    setShowUpgradeModal(false)
-                    // Navigate to pricing page - user can implement this
-                    window.location.href = '/app?view=pricing'
-                  }}
-                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl"
-                >
-                  Proプランにアップグレード
-                </button>
-                <button
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="w-full py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
-                >
-                  閉じる
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Source Selection Modal */}
-      {isSourceModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden animate-scaleIn">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                参照するソースを選択
-              </h3>
-              <button
-                onClick={() => setIsSourceModalOpen(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              {/* Include Options */}
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">全般</h4>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={includeNotes}
-                      onChange={(e) => setIncludeNotes(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                    />
-                    <FileText className="w-5 h-5 text-gray-500" />
-                    <span className="text-sm text-gray-900 dark:text-gray-100">ノートを含める</span>
-                  </label>
-                  <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={includeMessages}
-                      onChange={(e) => setIncludeMessages(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                    />
-                    <Sparkles className="w-5 h-5 text-gray-500" />
-                    <span className="text-sm text-gray-900 dark:text-gray-100">過去の会話を含める</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Collections */}
-              {collections.length > 0 && (
-                <div className="mb-6">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    コレクション ({collections.length})
-                  </h4>
-                  <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {collections.map((collection) => (
-                      <label
-                        key={collection.id}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedCollections.includes(collection.id)}
-                          onChange={() => toggleCollectionSelection(collection.id)}
-                          className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                        />
-                        <Folder className="w-5 h-5 text-gray-500" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{collection.name}</p>
-                          {collection.description && (
-                            <p className="text-xs text-gray-500 truncate">{collection.description}</p>
-                          )}
-                        </div>
-                        <span className="text-xs text-gray-400">{collection.documentCount}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Documents */}
-              {documents.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    ドキュメント ({documents.length})
-                  </h4>
-                  <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {documents.map((doc) => (
-                      <label
-                        key={doc.id}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedDocuments.includes(doc.id)}
-                          onChange={() => toggleDocumentSelection(doc.id)}
-                          className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                        />
-                        <FileText className="w-5 h-5 text-gray-500" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{doc.title}</p>
-                          <p className="text-xs text-gray-500">{doc.file_type.toUpperCase()}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Empty State */}
-              {collections.length === 0 && documents.length === 0 && (
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    ドキュメントがありません
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    ノートからドキュメントをアップロードしてください
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {selectedSourcesCount}個のソースを選択中
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    clearSelection()
-                    setIncludeNotes(true)
-                    setIncludeMessages(true)
-                  }}
-                  className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  リセット
-                </button>
-                <button
-                  onClick={() => setIsSourceModalOpen(false)}
-                  className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                >
-                  適用
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Messages */}
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto relative">
         <div className="max-w-3xl mx-auto px-4 py-6">
@@ -707,12 +389,12 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                   何でも聞いてください
                 </h2>
                 <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                  Faroがあなたの金融相談を<br className="sm:hidden" />
-                  プロフェッショナルにサポートします
+                  Faroがあなたの税金・金融の疑問に<br className="sm:hidden" />
+                  わかりやすく答えます
                 </p>
               </div>
 
-              {/* Suggestions - Gemini style */}
+              {/* Suggestions */}
               <div className="w-full max-w-2xl animate-fadeIn" style={{ animationDelay: '0.1s' }}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   {SUGGESTIONS.map((suggestion, idx) => (
@@ -740,7 +422,7 @@ export function ChatPanel({ userId }: ChatPanelProps) {
               {messages.map((msg, idx) => (
                 <div key={idx} className="mb-6 animate-fadeIn">
                   {msg.role === 'user' ? (
-                    // User Message - Gemini-style polished bubble
+                    // User Message
                     <div className="group flex justify-end">
                       <div className="max-w-[80%] sm:max-w-[70%]">
                         {editingMessageIndex === idx ? (
@@ -803,7 +485,7 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                       </div>
                     </div>
                   ) : (
-                    // Assistant Message - Gemini-level polish
+                    // Assistant Message
                     <div className="group flex items-start gap-3 sm:gap-4">
                       <div className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 flex items-center justify-center shadow-md">
                         <Sparkles className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-white" strokeWidth={2} />
@@ -819,14 +501,8 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                             <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
                               {new Date(msg.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            {msg.expertMode && (
-                              <div className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-[11px] font-semibold border border-purple-200 dark:border-purple-700/50">
-                                <span className="text-xs">⚖️</span>
-                                <span>エキスパート</span>
-                              </div>
-                            )}
                           </div>
-                          {/* Action buttons - Gemini style */}
+                          {/* Action buttons */}
                           <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <button
                               onClick={() => handleCopyMessage(msg.content, idx)}
@@ -892,7 +568,7 @@ export function ChatPanel({ userId }: ChatPanelProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Scroll to bottom button - Gemini style */}
+        {/* Scroll to bottom button */}
         {showScrollButton && (
           <button
             onClick={scrollToBottom}
@@ -904,58 +580,13 @@ export function ChatPanel({ userId }: ChatPanelProps) {
         )}
       </div>
 
-      {/* Input Area - Gemini-inspired Style */}
+      {/* Input Area */}
       <div className="border-t border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-900/50">
         <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3 sm:py-5 pb-4 sm:pb-6">
-          {/* Attached Files Preview */}
-          {attachedFiles.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2 animate-fadeIn">
-              {attachedFiles.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full text-sm border border-blue-200 dark:border-blue-700/50"
-                >
-                  <Paperclip className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300 truncate max-w-[120px] sm:max-w-[180px] text-xs font-medium">
-                    {file.name}
-                  </span>
-                  <button
-                    onClick={() => handleRemoveFile(index)}
-                    className="p-0.5 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-full transition-colors flex-shrink-0"
-                    aria-label="ファイルを削除"
-                  >
-                    <X className="w-3 h-3 text-gray-500 dark:text-gray-400" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Hidden File Input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/*,.pdf,.doc,.docx,.txt"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-
-          {/* Input Container - Gemini Style with larger, more prominent design */}
+          {/* Input Container */}
           <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-[0_2px_6px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.15)] focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.15),0_4px_16px_rgba(99,102,241,0.1)] dark:focus-within:shadow-[0_0_0_3px_rgba(129,140,248,0.25),0_4px_16px_rgba(129,140,248,0.15)] transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50">
             <div className="flex items-end gap-2 sm:gap-3 p-3 sm:p-4">
-              {/* Attach Button - Gemini style */}
-              <button
-                onClick={handleAttachClick}
-                disabled={isLoading}
-                className="flex-shrink-0 p-2.5 sm:p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700/70 active:bg-gray-200 dark:active:bg-gray-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed self-end group"
-                aria-label="ファイルを添付"
-                title="ファイルを添付"
-              >
-                <Paperclip className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-300 transition-colors" strokeWidth={2} />
-              </button>
-
-              {/* Textarea - Larger and more spacious */}
+              {/* Textarea */}
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -974,7 +605,7 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                 }}
               />
 
-              {/* Send Button - Gemini style with gradient */}
+              {/* Send Button */}
               <button
                 onClick={isLoading ? handleStop : handleSend}
                 disabled={!isLoading && !input.trim()}
@@ -994,51 +625,9 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                 )}
               </button>
             </div>
-
-            {/* Advanced Options - Below input, collapsible */}
-            <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-1 border-t border-gray-100 dark:border-gray-700/50">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Expert Mode - Simplified toggle */}
-                  <button
-                    onClick={() => setExpertMode(!expertMode)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95 ${
-                      expertMode
-                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-transparent hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                  >
-                    <Sparkles className={`w-3.5 h-3.5 ${expertMode ? 'animate-pulse' : ''}`} />
-                    <span>エキスパート</span>
-                  </button>
-
-                  {/* Source Selection Button - Simplified */}
-                  <button
-                    onClick={() => setIsSourceModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 transition-all text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 active:scale-95"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">ソース</span>
-                    {selectedSourcesCount > 0 && (
-                      <span className="px-1.5 py-0.5 bg-purple-500 text-white rounded-full text-[10px] font-bold min-w-[18px] text-center">
-                        {selectedSourcesCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                {/* Usage Indicator - Inline */}
-                {!isGuest && usageData && usageData.plan === 'free' && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    <Sparkles className="w-3 h-3" />
-                    <span className="font-medium">{usageData.remaining}/{usageData.limit}</span>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
-          {/* Helper Text - Minimal */}
+          {/* Helper Text */}
           <div className="mt-2 sm:mt-3 text-center">
             <p className="text-[11px] sm:text-xs text-gray-400 dark:text-gray-500">
               Faroは間違うこともあります。重要な情報は確認してください。

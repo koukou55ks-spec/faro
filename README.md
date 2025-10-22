@@ -1,15 +1,14 @@
-# Faro - Your Lifelong Financial Thinking Partner
+# Faro - Your Lifelong Social Benefits Partner
 
 <div align="center">
 
-**"Increase humanity's financial wellbeing"**
+**"あなたの人生の社会制度パートナー"**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E)](https://supabase.com/)
 [![Gemini](https://img.shields.io/badge/Gemini-2.0_Flash-4285F4)](https://ai.google.dev/)
-[![Stripe](https://img.shields.io/badge/Stripe-Integrated-008CDD)](https://stripe.com/)
 
 [English](#english) | [日本語](#japanese)
 
@@ -19,29 +18,84 @@
 
 ---
 
-## 🌟 What is Faro?
+## 🌟 Faroとは？
 
-**Faro** (スペイン語で「灯台」) is an AI-powered personal finance platform that provides expert-level financial advice through natural conversation. Unlike traditional budgeting apps, Faro understands your complete financial context and proactively helps you make smarter money decisions.
+**Faro**（スペイン語で「灯台」）は、日本の社会制度を楽しく学べるAIプラットフォームです。
 
-### Core Features
+従来の金融アプリとは異なり、Faroは**税金、年金、健康保険、雇用保険など、すべての社会制度を横断的にカバー**し、ユーザーの人生のライフイベントごとに最適な制度を提案します。
 
-- 💬 **AI Financial Advisor** - Chat with Gemini 2.0 Flash for personalized advice
-- 📊 **Smart Kakeibo** - AI-enhanced expense tracking and budgeting
-- 📝 **Financial Notes** - Notion-style documentation with AI assistance
-- 🔍 **Semantic Search** - Find relevant financial insights instantly
-- 🔐 **Privacy First** - Bank-level security with Supabase RLS
+### なぜFaroが必要か？
+
+**日本の社会制度は複雑すぎる**
+- 知らないと損する制度が多い（医療費控除、育休給付金、住宅ローン控除...）
+- 行政の縦割りで情報が分散している
+- 「誰に聞けばいいかわからない」
+
+**Faroが解決する**
+- 🤖 **AIが24/7即答** - 税理士、社労士レベルの知識をAIで提供
+- 🎯 **能動的に提案** - 「知らなかった」を防ぐ
+- 🎮 **楽しく学べる** - Spotify風UI、3分体験モジュール
+- 💰 **お金が増える** - 節税、給付金、控除をすべて最適化
+
+---
+
+## 🎯 コア機能
+
+### Phase 1: 税金（現在）
+- 💬 **AI税金相談** - 副業、ふるさと納税、確定申告...
+- 🧮 **シミュレーター** - ふるさと納税限度額、医療費控除、住宅ローン控除
+- 📚 **体験モジュール** - 3分で学べるインタラクティブレッスン
+
+### Phase 2: 社会保険（6-12ヶ月）
+- 年金シミュレーション（老齢、障害、遺族）
+- 健康保険（傷病手当金、高額療養費）
+- 雇用保険（失業手当、育児休業給付）
+
+### Phase 3: ライフイベント（12-24ヶ月）
+- 🤰 **出産** - 育休給付金、児童手当、医療費控除
+- 💍 **結婚** - 配偶者控除、年金統合、扶養
+- 🏠 **住宅購入** - 住宅ローン控除、不動産取得税
+- 💼 **転職** - 失業手当、退職金、年金切り替え
+
+### Phase 4: フルエージェント（24ヶ月〜）
+- 能動的通知（「医療費が10万円超えました！確定申告で還付されます」）
+- 申請サポート（給付金の申請手順をガイド）
+- 専門家マッチング（税理士、社労士、FP紹介）
+
+---
+
+## 🏗️ Architecture
+
+```
+apps/
+├── web/                    # Next.js 15 Web App
+│   ├── app/
+│   │   ├── page.tsx        # メインアプリ（統合UI）
+│   │   ├── search/         # さがす（体験モジュール）
+│   │   ├── tools/          # エージェント（能動的提案）
+│   │   ├── mypage/         # マイページ（パーソナル情報）
+│   │   └── connect/        # つながる（専門家紹介）
+│   └── lib/
+│       └── playlistData.ts # モジュールデータ管理
+
+packages/
+├── core/                   # ✅ Business Logic
+├── infrastructure/         # ✅ Supabase + Gemini
+└── ui/                     # Design System
+```
+
+### Tech Stack
+
+**Frontend**: Next.js 15 + React 19 + TypeScript 5.7
+**Backend**: Next.js API Routes + Supabase
+**AI**: Gemini 2.0 Flash + text-embedding-004
+**State**: Zustand + Immer
+**UI**: Tailwind CSS + shadcn/ui + Framer Motion
+**Payment**: Stripe（Freemium準備中）
 
 ---
 
 ## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- pnpm (`npm install -g pnpm`)
-- Supabase CLI
-
-### Installation
 
 ```bash
 # Clone repository
@@ -55,187 +109,119 @@ pnpm install
 cp .env.local.example .env.local
 # Edit .env.local with your API keys
 
-# Setup database
-.\scripts\setup-database.ps1  # Windows
-# or
-./scripts/setup-database.sh   # macOS/Linux
-
 # Start development server
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 📚 Documentation
+## 📊 Development Status
 
-### Getting Started
-- [Setup Instructions](./SETUP_INSTRUCTIONS.md) - Complete setup guide
-- [Quick Start](./docs/QUICKSTART.md) - Get running in 5 minutes
-- [Deploy Checklist](./docs/DEPLOY_CHECKLIST.md) - Production deployment guide
-
-### Architecture
-- [CLAUDE.md](./CLAUDE.md) - Complete project specification
-- [Implementation Status](./IMPLEMENTATION_STATUS.md) - Current progress
-- [Scaling Strategy](./docs/SCALING_STRATEGY.md) - 100万+ user architecture
-
-### Roadmaps
-- [Mobile Roadmap](./docs/MOBILE_ROADMAP.md) - iOS/Android expansion plan
-- [Improvement Summary](./docs/IMPROVEMENT_SUMMARY.md) - Recent improvements
-
----
-
-## 🏗️ Architecture
-
-Faro follows **Clean Architecture** principles with strict separation of concerns:
-
-```
-apps/
-├── web/                    # Next.js 15 Web App
-│   ├── app/                # App Router
-│   ├── components/         # UI Components
-│   └── lib/                # App-specific logic
-└── mobile/                 # React Native (Expo) - Coming Soon
-
-packages/
-├── core/                   # ✅ Business Logic (DDD)
-│   ├── domain/             # Entities
-│   ├── usecases/           # Use Cases
-│   └── interfaces/         # Repository Interfaces
-├── infrastructure/         # ✅ External Integrations
-│   ├── database/           # Supabase Repository
-│   ├── ai/                 # Gemini AI Service
-│   └── vector/             # pgvector Search
-├── ui/                     # Design System
-├── shared/                 # Utilities
-└── ai-agent/               # AI Agents
-```
-
-### Tech Stack
-
-**Frontend**: Next.js 15 (App Router) + React 19 + TypeScript 5.7
-**Backend**: Next.js API Routes + Supabase (PostgreSQL + Auth + RLS)
-**AI**: Gemini 2.0 Flash + text-embedding-004 (768-dim vectors)
-**State**: Zustand + Immer
-**Testing**: Jest + Playwright (70% coverage goal)
-**CI/CD**: GitHub Actions + Vercel
-**Monitoring**: Sentry + Axiom
-
----
-
-## 🎯 Development Commands
-
-```bash
-# Development
-pnpm dev                    # Start dev server
-pnpm build                  # Build for production
-pnpm start                  # Start production server
-
-# Code Quality
-pnpm lint                   # Run ESLint
-pnpm type-check             # TypeScript type checking
-pnpm test                   # Run tests
-pnpm test:coverage          # Test coverage report
-
-# Database
-.\scripts\setup-database.ps1  # Setup Supabase DB (Windows)
-./scripts/setup-database.sh   # Setup Supabase DB (Unix)
-
-# Cleanup
-pnpm clean                  # Remove build artifacts
-```
-
----
-
-## 🌐 Deployment
-
-### Vercel (Web App)
-
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Login
-vercel login
-
-# Deploy to production
-vercel --prod
-```
-
-### Environment Variables
-
-Set these in Vercel Dashboard → Settings → Environment Variables:
-
-**Required**:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_KEY`
-- `GEMINI_API_KEY`
-
-**Recommended (Production)**:
-- `SENTRY_DSN` - Error tracking
-- `AXIOM_TOKEN` - Log aggregation
-- `UPSTASH_REDIS_REST_URL` - Rate limiting
-
-See [.env.local.example](./.env.local.example) for complete list.
-
----
-
-## 📊 Project Status
-
-**Overall**: 9.5/10 ✅ Production-Ready
+**Overall**: 8/10 ✅ MVP完成
 
 | Component | Status | Progress |
 |-----------|--------|----------|
 | Clean Architecture | ✅ Complete | 10/10 |
-| Database (Supabase) | ✅ Complete | 10/10 |
-| Authentication | ✅ Complete | 10/10 |
 | AI Integration (Gemini) | ✅ Complete | 10/10 |
-| State Management | ✅ Complete | 10/10 |
-| Testing | ✅ Complete | 10/10 |
-| CI/CD | ✅ Complete | 10/10 |
-| Monitoring | ✅ Complete | 10/10 |
-| Documentation | ✅ Complete | 10/10 |
-| Frontend UI | 🚧 In Progress | 7/10 |
+| 体験モジュール（税金） | ✅ Complete | 10/10 |
+| シミュレーター | ✅ Complete | 10/10 |
+| エージェント提案UI | ✅ Complete | 10/10 |
+| マイページ | ✅ Complete | 10/10 |
+| 専門家紹介 | 🚧 Placeholder | 5/10 |
+| Stripe決済 | 🔜 準備中 | 0/10 |
 
 ---
 
 ## 🗺️ Roadmap
 
-### Phase 1: Web MVP (0-3 months) ← **Current**
-- ✅ Clean Architecture foundation
-- ✅ Supabase integration
-- ✅ Gemini AI integration
-- 🚧 Chat UI implementation
-- 🚧 Dashboard implementation
-- 🚧 Vercel production deployment
+### Phase 1: 税金で圧倒的PMF（0-6ヶ月）← **現在地**
+**目標**: 10,000ユーザー、NPS > 60
 
-### Phase 2: iOS TestFlight (3-6 months)
-- React Native (Expo) setup
-- Apple Developer registration ($99/year)
-- TestFlight beta release
-- Target: 10,000 beta users
+- ✅ 税金モジュール30種（完成）
+- ✅ AI対話機能（完成）
+- ✅ シミュレーター3種（完成）
+- 🚧 SEO最適化（「副業 税金」1位目指す）
+- 🚧 Product Hunt発売
+- 🚧 Vercel本番デプロイ
 
-### Phase 3: Freemium + Android (6-12 months)
-- Google Play Beta
-- Stripe payment integration
-- Pricing: $9.99/month premium
-- Target: 10,000 users, $3k MRR
+### Phase 2: 社会保険追加（6-12ヶ月）
+**目標**: 50,000ユーザー、$25k MRR
 
-### Phase 4: Scale (12-24 months)
-- ASO optimization
-- Referral program
-- Bank integration (Plaid)
-- Target: 100,000 users, $50k MRR ($600k ARR)
+- 社会保険料シミュレーター
+- 年金シミュレーター
+- 健康保険（傷病手当金、高額療養費）
+- Stripe決済実装（$9.99/月）
 
-**Ultimate Goal**: $1M ARR (One-Person Unicorn) 🦄
+### Phase 3: ライフイベント拡張（12-24ヶ月）
+**目標**: 200,000ユーザー、$100k MRR
+
+- 出産モジュール
+- 結婚モジュール
+- 住宅購入モジュール
+- 転職モジュール
+
+### Phase 4: フルエージェント化（24-36ヶ月）
+**目標**: 500,000ユーザー、$250k MRR（年商30億円）
+
+- 能動的通知システム
+- 申請サポート機能
+- 専門家マッチング自動化
+- B2B展開（企業・自治体向け）
+
+**Ultimate Goal**: 年商50億円（企業評価100億円）🦄
+
+---
+
+## 💰 Business Model
+
+### Freemium（主な収益源）
+- **Free tier**: AI対話月30回、基本シミュレーター
+- **Pro tier ($9.99/月)**: 無制限AI、全シミュレーター、エージェント機能
+
+### アフィリエイト（高単価）
+1. 税理士紹介: 2-10万円/件
+2. 社労士紹介: 10-30万円/件
+3. FP紹介: 5千-1万円/件
+4. 不動産: 100-300万円/件
+5. 保険: 3-10万円/件
+6. 転職エージェント: 50-300万円/件
+7. ふるさと納税: 寄付額の5%
+
+### B2B（将来）
+- 企業の人事部向け（従業員の制度相談をAIで対応）
+- 自治体向け（住民の窓口業務を削減）
+
+---
+
+## 🎨 Design Philosophy
+
+### "日本の社会制度を楽しく学べるNetflix"
+
+**3つの柱**
+1. **エンタメ × 教育** - Spotify風UI、楽しく学べる
+2. **Context is Everything** - ユーザーの人生を完全理解
+3. **能動的エージェント** - 知らないと損する制度を通知
+
+**UX原則**
+- モバイルファースト（375px〜）
+- 3分体験モジュール（短く、楽しく）
+- 対話型（質問に即答）
+
+---
+
+## 📚 Documentation
+
+- [CLAUDE.md](./CLAUDE.md) - 完全プロジェクト仕様書
+- [.workflow/STATUS.md](./.workflow/STATUS.md) - 現在の開発状況
+- [.workflow/DECISIONS.md](./.workflow/DECISIONS.md) - 技術的決定ログ
 
 ---
 
 ## 🤝 Contributing
 
-This is currently a solo-founder project. Contributions will be considered in the future.
+現在は一人開発プロジェクトです。将来的にコントリビューションを検討します。
 
 ---
 
@@ -245,96 +231,12 @@ Proprietary - All Rights Reserved
 
 ---
 
-## 📧 Contact
-
-- Website: [getfaro.com](https://getfaro.com) (Coming Soon)
-- Documentation: [docs/](./docs/)
-- Issues: [GitHub Issues](https://github.com/your-username/faro/issues)
-
----
-
-<div align="center">
-
-**Built with ❤️ by a solo founder using Claude Code**
-
-Faro - Your lifelong financial thinking partner 🏮
-
-</div>
-
----
-
-# 日本語 {#japanese}
-
-## 🌟 Faroとは？
-
-**Faro**（スペイン語で「灯台」）は、AI駆動のパーソナル金融プラットフォームです。従来の家計簿アプリとは異なり、ユーザーの完全な金融コンテキストを理解し、能動的により賢いお金の決断をサポートします。
-
-### 主な機能
-
-- 💬 **AIファイナンシャルアドバイザー** - Gemini 2.0 Flashとの対話で専門的なアドバイス
-- 📊 **スマート家計簿** - AI強化された支出追跡と予算管理
-- 📝 **金融ノート** - Notion風ドキュメント + AIアシスト
-- 🔍 **セマンティック検索** - 関連する金融情報を瞬時に検索
-- 🔐 **プライバシー第一** - Supabase RLSによる銀行レベルのセキュリティ
-
-### クイックスタート
-
-```bash
-# リポジトリをクローン
-git clone https://github.com/your-username/faro.git
-cd faro
-
-# 依存関係をインストール
-pnpm install
-
-# 環境変数を設定
-cp .env.local.example .env.local
-
-# データベースセットアップ
-.\scripts\setup-database.ps1
-
-# 開発サーバー起動
-pnpm dev
-```
-
-### ドキュメント
-
-- [セットアップ手順](./SETUP_INSTRUCTIONS.md)
-- [完全仕様書](./CLAUDE.md)
-- [実装状況](./IMPLEMENTATION_STATUS.md)
-- [スケール戦略](./docs/SCALING_STRATEGY.md)
-- [モバイルロードマップ](./docs/MOBILE_ROADMAP.md)
-
-### 技術スタック
-
-**総合評価**: 9.5/10 ✅ 本番環境レディ
-
-- Clean Architecture + DDD（完全実装）
-- Next.js 15 + React 19 + TypeScript 5.7
-- Supabase (PostgreSQL + Auth + RLS)
-- Gemini 2.0 Flash (AIチャット)
-- Zustand (状態管理)
-- Jest + Playwright (テスト)
-- GitHub Actions + Vercel (CI/CD)
-- Sentry + Axiom (モニタリング)
-
-### ロードマップ
-
-**フェーズ1**: Webアプリ完成（0〜3ヶ月）← **現在地**
-**フェーズ2**: iOS TestFlight（3〜6ヶ月）
-**フェーズ3**: Android + Freemium（6〜12ヶ月）
-**フェーズ4**: スケール（12〜24ヶ月）
-
-**最終目標**: $1M ARR（一人ユニコーン）🦄
-
----
-
 <div align="center">
 
 **一人の創業者がClaude Codeを使って構築中**
 
-Faro - 一生涯の金融思考パートナー 🏮
+Faro - あなたの人生の社会制度パートナー 🏮
 
-[ドキュメント](./docs/) | [セットアップ](./SETUP_INSTRUCTIONS.md) | [仕様書](./CLAUDE.md)
+"知らないと損する"を、ゼロにする。
 
 </div>

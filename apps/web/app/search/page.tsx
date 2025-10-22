@@ -1,73 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Play, Clock, TrendingUp, Sparkles, MessageSquare, SlidersHorizontal, CheckCircle2, ChevronRight, Trophy, Briefcase, Heart, GraduationCap, Home as HomeIcon } from 'lucide-react'
+import { Search, Play, TrendingUp, Sparkles, MessageSquare, SlidersHorizontal, CheckCircle2, ChevronRight, Trophy, Briefcase, Heart, GraduationCap, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
-
-type ModuleType = 'simulator' | 'guide' | 'scan' | 'quiz'
-
-interface Module {
-  id: string
-  type: ModuleType
-  title: string
-  duration: string
-}
-
-interface Playlist {
-  id: string
-  title: string
-  description: string
-  duration: string
-  modules: Module[]
-  coverColor: string
-  plays?: number
-  category?: string
-}
-
-// プレイリストデータを大幅拡張
-const allPlaylists: Playlist[] = [
-  // 本日のランキング
-  { id: '1', title: 'ふるさと納税 完全攻略', description: '3ステップで完了', duration: '15分', coverColor: 'from-blue-500 to-blue-600', plays: 12453, category: 'ranking', modules: [] },
-  { id: '2', title: '103万・130万の壁', description: '手取り減少を体験', duration: '12分', coverColor: 'from-purple-500 to-purple-600', plays: 9821, category: 'ranking', modules: [] },
-  { id: '3', title: '確定申告はじめて', description: 'フリーランス必見', duration: '20分', coverColor: 'from-orange-500 to-orange-600', plays: 8234, category: 'ranking', modules: [] },
-  { id: '4', title: '医療費控除の全て', description: '10万円超えたら', duration: '10分', coverColor: 'from-green-500 to-green-600', plays: 7102, category: 'ranking', modules: [] },
-  { id: '5', title: '住宅ローン控除', description: '最大400万円', duration: '18分', coverColor: 'from-red-500 to-red-600', plays: 6543, category: 'ranking', modules: [] },
-
-  // サラリーマンにおすすめ
-  { id: '11', title: '給与明細の読み方', description: '手取りの仕組み', duration: '8分', coverColor: 'from-cyan-500 to-cyan-600', category: 'salary', modules: [] },
-  { id: '12', title: '年末調整 完璧ガイド', description: '11月までに準備', duration: '12分', coverColor: 'from-indigo-500 to-indigo-600', category: 'salary', modules: [] },
-  { id: '13', title: '副業の確定申告', description: '20万円ルール', duration: '15分', coverColor: 'from-pink-500 to-pink-600', category: 'salary', modules: [] },
-  { id: '14', title: '通勤手当と税金', description: '非課税の上限', duration: '6分', coverColor: 'from-teal-500 to-teal-600', category: 'salary', modules: [] },
-  { id: '15', title: '退職金の税金', description: '控除を最大化', duration: '14分', coverColor: 'from-amber-500 to-amber-600', category: 'salary', modules: [] },
-
-  // 所得税について
-  { id: '21', title: '所得税の基本', description: '累進課税とは', duration: '10分', coverColor: 'from-violet-500 to-violet-600', category: 'income-tax', modules: [] },
-  { id: '22', title: '10種類の所得', description: '給与・事業・雑所得', duration: '16分', coverColor: 'from-fuchsia-500 to-fuchsia-600', category: 'income-tax', modules: [] },
-  { id: '23', title: '所得控除14種類', description: '税金を減らす', duration: '22分', coverColor: 'from-rose-500 to-rose-600', category: 'income-tax', modules: [] },
-  { id: '24', title: '税率シミュレーター', description: '5%〜45%を体験', duration: '8分', coverColor: 'from-sky-500 to-sky-600', category: 'income-tax', modules: [] },
-  { id: '25', title: '源泉徴収のカラクリ', description: '天引きの仕組み', duration: '12分', coverColor: 'from-lime-500 to-lime-600', category: 'income-tax', modules: [] },
-
-  // 投資・資産運用
-  { id: '31', title: 'NISA完全ガイド', description: '1800万円非課税', duration: '18分', coverColor: 'from-emerald-500 to-emerald-600', category: 'investment', modules: [] },
-  { id: '32', title: 'iDeCo節税効果', description: '年間27.6万円控除', duration: '14分', coverColor: 'from-blue-400 to-blue-500', category: 'investment', modules: [] },
-  { id: '33', title: '株式投資と税金', description: '特定口座を理解', duration: '16分', coverColor: 'from-purple-400 to-purple-500', category: 'investment', modules: [] },
-  { id: '34', title: '仮想通貨の確定申告', description: '雑所得の計算', duration: '20分', coverColor: 'from-orange-400 to-orange-500', category: 'investment', modules: [] },
-  { id: '35', title: '不動産投資の税金', description: '減価償却を活用', duration: '24分', coverColor: 'from-red-400 to-red-500', category: 'investment', modules: [] },
-
-  // フリーランス・個人事業主
-  { id: '41', title: '青色申告65万円控除', description: '最強の節税', duration: '18分', coverColor: 'from-cyan-400 to-cyan-500', category: 'freelance', modules: [] },
-  { id: '42', title: '経費の境界線', description: '何が認められる？', duration: '12分', coverColor: 'from-indigo-400 to-indigo-500', category: 'freelance', modules: [] },
-  { id: '43', title: 'インボイス制度', description: '登録すべき？', duration: '16分', coverColor: 'from-pink-400 to-pink-500', category: 'freelance', modules: [] },
-  { id: '44', title: '小規模企業共済', description: '退職金を作る', duration: '14分', coverColor: 'from-teal-400 to-teal-500', category: 'freelance', modules: [] },
-  { id: '45', title: '帳簿のつけ方', description: 'freee vs 弥生', duration: '10分', coverColor: 'from-amber-400 to-amber-500', category: 'freelance', modules: [] },
-
-  // 家族の税金
-  { id: '51', title: '配偶者控除・特別控除', description: '150万円の壁', duration: '14分', coverColor: 'from-violet-400 to-violet-500', category: 'family', modules: [] },
-  { id: '52', title: '扶養控除を最大化', description: '16歳以上の子供', duration: '10分', coverColor: 'from-fuchsia-400 to-fuchsia-500', category: 'family', modules: [] },
-  { id: '53', title: 'ひとり親控除', description: '35万円控除', duration: '8分', coverColor: 'from-rose-400 to-rose-500', category: 'family', modules: [] },
-  { id: '54', title: '教育資金の贈与', description: '1500万円非課税', duration: '16分', coverColor: 'from-sky-400 to-sky-500', category: 'family', modules: [] },
-  { id: '55', title: '相続税の基本', description: '3000万円+600万円×人数', duration: '20分', coverColor: 'from-lime-400 to-lime-500', category: 'family', modules: [] },
-]
+import { allPlaylists, type Playlist, type ModuleType } from '../../lib/playlistData'
+import { GuideChat } from '../../src/features/chat/components/GuideChat'
+import { SimulatorView } from '../../src/features/simulator/components/SimulatorView'
 
 // カテゴリ別セクション定義
 const sections = [
@@ -79,12 +17,26 @@ const sections = [
   { id: 'family', title: '家族の税金', icon: Heart, playlists: allPlaylists.filter(p => p.category === 'family') },
 ]
 
+// モジュールタイプごとの表示設定
+const getModuleDisplay = (type: ModuleType) => {
+  switch (type) {
+    case 'simulator':
+      return { label: 'シミュレーター', icon: SlidersHorizontal, bg: 'bg-blue-500/10', text: 'text-blue-500', iconBg: 'bg-blue-500' }
+    case 'guide':
+      return { label: 'AIガイド', icon: MessageSquare, bg: 'bg-purple-500/10', text: 'text-purple-500', iconBg: 'bg-purple-500' }
+    case 'scan':
+      return { label: 'スキャン', icon: Sparkles, bg: 'bg-orange-500/10', text: 'text-orange-500', iconBg: 'bg-orange-500' }
+    case 'quiz':
+      return { label: 'クイズ', icon: CheckCircle2, bg: 'bg-green-500/10', text: 'text-green-500', iconBg: 'bg-green-500' }
+  }
+}
+
 // プレイリストカードコンポーネント（Spotifyスタイル）
-function PlaylistCard({ playlist, size = 'normal' }: { playlist: Playlist; size?: 'normal' | 'large' }) {
+function PlaylistCard({ playlist, size = 'normal', onClick }: { playlist: Playlist; size?: 'normal' | 'large'; onClick?: () => void }) {
   const isLarge = size === 'large'
 
   return (
-    <div className={`group cursor-pointer ${isLarge ? 'w-full' : 'w-40 sm:w-44 flex-shrink-0'}`}>
+    <div onClick={onClick} className={`group cursor-pointer ${isLarge ? 'w-full' : 'w-40 sm:w-44 flex-shrink-0'}`}>
       <div className="relative mb-2">
         <div className={`aspect-square bg-gradient-to-br ${playlist.coverColor} rounded-lg shadow-md overflow-hidden ${isLarge ? 'rounded-xl' : ''}`}>
           <div className="w-full h-full flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
@@ -114,7 +66,7 @@ function PlaylistCard({ playlist, size = 'normal' }: { playlist: Playlist; size?
 }
 
 // 横スクロールセクション
-function ScrollableSection({ section }: { section: typeof sections[0] }) {
+function ScrollableSection({ section, onPlaylistClick }: { section: typeof sections[0]; onPlaylistClick: (playlist: Playlist) => void }) {
   const Icon = section.icon
 
   return (
@@ -136,7 +88,7 @@ function ScrollableSection({ section }: { section: typeof sections[0] }) {
       <div className="overflow-x-auto scrollbar-hide px-4">
         <div className="flex space-x-4">
           {section.playlists.map((playlist) => (
-            <PlaylistCard key={playlist.id} playlist={playlist} />
+            <PlaylistCard key={playlist.id} playlist={playlist} onClick={() => onPlaylistClick(playlist)} />
           ))}
         </div>
       </div>
@@ -144,9 +96,164 @@ function ScrollableSection({ section }: { section: typeof sections[0] }) {
   )
 }
 
+// プレイリスト詳細ページ
+function PlaylistDetailView({ playlist, onBack, onModuleClick }: { playlist: Playlist; onBack: () => void; onModuleClick: (moduleId: string, moduleType: ModuleType) => void }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white pb-20">
+      {/* ヘッダー */}
+      <div className={`bg-gradient-to-b ${playlist.coverColor} p-6 pb-8`}>
+        <button
+          onClick={onBack}
+          className="mb-4 flex items-center space-x-2 text-white/80 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>戻る</span>
+        </button>
+        <div className="flex items-end space-x-4">
+          <div className={`w-48 h-48 flex-shrink-0 rounded-lg bg-gradient-to-br ${playlist.coverColor} shadow-2xl flex items-center justify-center`}>
+            <Play className="w-20 h-20 text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold mb-2 opacity-80">プレイリスト</p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">{playlist.title}</h1>
+            <p className="text-white/90 mb-2 text-lg">{playlist.description}</p>
+            <div className="flex items-center space-x-2 text-sm text-white/70">
+              <span>{playlist.modules.length}個のモジュール</span>
+              <span>•</span>
+              <span>{playlist.duration}</span>
+              {playlist.plays && (
+                <>
+                  <span>•</span>
+                  <span>{playlist.plays.toLocaleString()}回再生</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 再生ボタン */}
+      <div className="px-6 py-6">
+        <button
+          onClick={() => playlist.modules.length > 0 && onModuleClick(playlist.modules[0].id, playlist.modules[0].type)}
+          disabled={playlist.modules.length === 0}
+          className="bg-green-500 hover:bg-green-400 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-bold py-3 px-8 rounded-full flex items-center space-x-2 transition-all shadow-lg hover:scale-105 active:scale-100 disabled:hover:scale-100"
+        >
+          <Play className="w-6 h-6 fill-current" />
+          <span>プレイリストを開始</span>
+        </button>
+      </div>
+
+      {/* モジュール一覧 */}
+      <div className="px-6 space-y-2">
+        {playlist.modules.length > 0 ? (
+          playlist.modules.map((module, index) => {
+            const display = getModuleDisplay(module.type)
+            const Icon = display.icon
+            return (
+              <motion.div
+                key={module.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                onClick={() => onModuleClick(module.id, module.type)}
+                className="bg-white/5 hover:bg-white/10 rounded-lg p-4 cursor-pointer transition-all group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4 flex-1">
+                    <span className="text-white/60 w-6 text-sm">{index + 1}</span>
+                    <div className={`${display.iconBg} p-2.5 rounded-lg`}>
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-white group-hover:text-green-400 transition-colors">
+                        {module.title}
+                      </h3>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className={`text-xs px-2 py-0.5 ${display.bg} ${display.text} rounded-full font-medium`}>
+                          {display.label}
+                        </span>
+                        {module.description && (
+                          <span className="text-sm text-white/60">{module.description}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-white/60">{module.duration}</span>
+                    <Play className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })
+        ) : (
+          <div className="text-center py-12 text-white/60">
+            <p className="mb-2">このプレイリストは準備中です</p>
+            <p className="text-sm">近日公開予定！</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null)
+  const [activeGuide, setActiveGuide] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
+  const [activeSimulator, setActiveSimulator] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
 
+  const handlePlaylistClick = (playlist: Playlist) => {
+    setSelectedPlaylist(playlist)
+  }
+
+  const handleBack = () => {
+    setSelectedPlaylist(null)
+  }
+
+  const handleModuleClick = (moduleId: string, moduleType: ModuleType) => {
+    // Find the module to get its title
+    const module = selectedPlaylist?.modules.find(m => m.id === moduleId)
+    const moduleTitle = module?.title || 'モジュール'
+
+    if (moduleType === 'guide') {
+      // Open AI Guide Talk
+      setActiveGuide({ moduleId, moduleTitle })
+    } else if (moduleType === 'simulator') {
+      // Open Simulator
+      setActiveSimulator({ moduleId, moduleTitle })
+    } else {
+      // TODO: スキャン、クイズは次のステップで実装
+      console.log('Module clicked:', moduleId, moduleType)
+      alert(`${moduleType}モジュールを開始します（準備中）`)
+    }
+  }
+
+  const handleGuideBack = () => {
+    setActiveGuide(null)
+  }
+
+  const handleSimulatorBack = () => {
+    setActiveSimulator(null)
+  }
+
+  // AIガイド表示
+  if (activeGuide) {
+    return <GuideChat moduleId={activeGuide.moduleId} moduleTitle={activeGuide.moduleTitle} onBack={handleGuideBack} />
+  }
+
+  // シミュレーター表示
+  if (activeSimulator) {
+    return <SimulatorView moduleId={activeSimulator.moduleId} moduleTitle={activeSimulator.moduleTitle} onBack={handleSimulatorBack} />
+  }
+
+  // プレイリスト詳細表示
+  if (selectedPlaylist) {
+    return <PlaylistDetailView playlist={selectedPlaylist} onBack={handleBack} onModuleClick={handleModuleClick} />
+  }
+
+  // メイン画面（プレイリスト一覧）
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       {/* 検索バー（固定） */}
@@ -174,14 +281,19 @@ export default function SearchPage() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {allPlaylists.slice(0, 4).map((playlist) => (
-              <PlaylistCard key={playlist.id} playlist={playlist} size="large" />
+              <PlaylistCard
+                key={playlist.id}
+                playlist={playlist}
+                size="large"
+                onClick={() => handlePlaylistClick(playlist)}
+              />
             ))}
           </div>
         </section>
 
         {/* カテゴリ別セクション（横スクロール） */}
         {sections.map((section) => (
-          <ScrollableSection key={section.id} section={section} />
+          <ScrollableSection key={section.id} section={section} onPlaylistClick={handlePlaylistClick} />
         ))}
       </div>
 
