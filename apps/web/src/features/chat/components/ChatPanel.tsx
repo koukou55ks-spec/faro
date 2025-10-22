@@ -904,70 +904,27 @@ export function ChatPanel({ userId }: ChatPanelProps) {
         )}
       </div>
 
-      {/* Input Area - ChatGPT Style */}
-      <div className="border-t border-gray-200/80 dark:border-gray-800/80 bg-white dark:bg-gray-900">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 pb-6">
-          {/* Expert Mode & Source Selection - Moved to top */}
-          <div className="mb-3 flex items-center gap-2 flex-wrap">
-            {/* Expert Mode */}
-            <label className="flex items-center gap-2 cursor-pointer group px-3 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-all shadow-sm hover:shadow active:scale-95">
-              <div className="relative flex-shrink-0">
-                <input
-                  type="checkbox"
-                  checked={expertMode}
-                  onChange={(e) => setExpertMode(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-purple-600 transition-all duration-300"></div>
-                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-4 shadow-md"></div>
-              </div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors flex items-center gap-1.5 whitespace-nowrap">
-                <span className="text-sm">⚖️</span>
-                <span className="hidden sm:inline">エキスパートモード</span>
-                <span className="sm:hidden">エキスパート</span>
-              </span>
-            </label>
-
-            {/* Source Selection Button */}
-            <button
-              onClick={() => setIsSourceModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-all shadow-sm hover:shadow text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-300 active:scale-95 whitespace-nowrap"
-            >
-              <FileText className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden sm:inline">ソース選択</span>
-              <span className="sm:hidden">ソース</span>
-              {selectedSourcesCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-semibold flex-shrink-0">
-                  {selectedSourcesCount}
-                </span>
-              )}
-            </button>
-
-            {expertMode && (
-              <span className="text-xs text-purple-600 dark:text-purple-400 animate-fadeIn hidden sm:inline">
-                専門的な金融アドバイスを提供します
-              </span>
-            )}
-          </div>
-
+      {/* Input Area - Gemini-inspired Style */}
+      <div className="border-t border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-900/50">
+        <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3 sm:py-5 pb-4 sm:pb-6">
           {/* Attached Files Preview */}
           {attachedFiles.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2">
+            <div className="mb-3 flex flex-wrap gap-2 animate-fadeIn">
               {attachedFiles.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-sm border border-purple-200 dark:border-purple-700/50"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full text-sm border border-blue-200 dark:border-blue-700/50"
                 >
-                  <Paperclip className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300 truncate max-w-[150px] sm:max-w-[200px] text-xs sm:text-sm">
+                  <Paperclip className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  <span className="text-gray-700 dark:text-gray-300 truncate max-w-[120px] sm:max-w-[180px] text-xs font-medium">
                     {file.name}
                   </span>
                   <button
                     onClick={() => handleRemoveFile(index)}
-                    className="p-0.5 hover:bg-purple-100 dark:hover:bg-purple-800/50 rounded transition-colors flex-shrink-0"
+                    className="p-0.5 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-full transition-colors flex-shrink-0"
                     aria-label="ファイルを削除"
                   >
-                    <X className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                    <X className="w-3 h-3 text-gray-500 dark:text-gray-400" />
                   </button>
                 </div>
               ))}
@@ -984,91 +941,107 @@ export function ChatPanel({ userId }: ChatPanelProps) {
             className="hidden"
           />
 
-          {/* Input Container - ChatGPT Style */}
-          <div className="relative bg-white dark:bg-gray-800 rounded-[26px] shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.4)] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_4px_8px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.5)] focus-within:shadow-[0_0_0_2px_rgba(124,58,237,0.5),0_4px_12px_rgba(124,58,237,0.15)] dark:focus-within:shadow-[0_0_0_2px_rgba(168,85,247,0.5),0_4px_12px_rgba(168,85,247,0.2)] transition-all duration-200">
-            <div className="flex items-end gap-2 p-2">
-              {/* Attach Button */}
+          {/* Input Container - Gemini Style with larger, more prominent design */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-[0_2px_6px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.15)] focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.15),0_4px_16px_rgba(99,102,241,0.1)] dark:focus-within:shadow-[0_0_0_3px_rgba(129,140,248,0.25),0_4px_16px_rgba(129,140,248,0.15)] transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex items-end gap-2 sm:gap-3 p-3 sm:p-4">
+              {/* Attach Button - Gemini style */}
               <button
                 onClick={handleAttachClick}
                 disabled={isLoading}
-                className="flex-shrink-0 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-end mb-0.5"
+                className="flex-shrink-0 p-2.5 sm:p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700/70 active:bg-gray-200 dark:active:bg-gray-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed self-end group"
                 aria-label="ファイルを添付"
+                title="ファイルを添付"
               >
-                <Paperclip className="w-5 h-5 text-gray-500 dark:text-gray-400" strokeWidth={2} />
+                <Paperclip className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-300 transition-colors" strokeWidth={2} />
               </button>
 
-              {/* Textarea */}
+              {/* Textarea - Larger and more spacious */}
               <textarea
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Faroに質問してください..."
+                placeholder="何でも聞いてください..."
                 rows={1}
                 disabled={isLoading}
-                className="flex-1 px-2 py-2.5 bg-transparent resize-none focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all text-[15px] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 leading-[1.5]"
+                className="flex-1 px-1 sm:px-2 py-3 sm:py-3.5 bg-transparent resize-none focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all text-base sm:text-[16px] text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-500 leading-[1.6] font-normal"
                 style={{
-                  minHeight: '40px',
-                  maxHeight: '200px',
+                  minHeight: '44px',
+                  maxHeight: '240px',
                   overflow: input.split('\n').length > 1 ? 'auto' : 'hidden',
                   scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(156, 163, 175, 0.3) transparent'
+                  scrollbarColor: 'rgba(156, 163, 175, 0.4) transparent'
                 }}
               />
 
-              {/* Send/Stop Button - ChatGPT Exact Style */}
+              {/* Send Button - Gemini style with gradient */}
               <button
                 onClick={isLoading ? handleStop : handleSend}
                 disabled={!isLoading && !input.trim()}
-                className={`flex-shrink-0 p-2 rounded-[12px] transition-all duration-150 self-end mb-0.5 ${
+                className={`flex-shrink-0 p-3 sm:p-3.5 rounded-2xl transition-all duration-200 self-end shadow-sm ${
                   isLoading
-                    ? 'bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 shadow-sm hover:shadow-md active:scale-95'
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-red-200 dark:shadow-red-900/30 hover:shadow-md active:scale-95'
                     : input.trim()
-                    ? 'bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 shadow-sm hover:shadow-md active:scale-95'
-                    : 'bg-gray-100 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 cursor-not-allowed border border-gray-200 dark:border-gray-700'
+                    ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 hover:from-indigo-600 hover:via-purple-600 hover:to-blue-600 text-white shadow-purple-200 dark:shadow-purple-900/30 hover:shadow-lg hover:scale-105 active:scale-100'
+                    : 'bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-600 cursor-not-allowed'
                 }`}
                 aria-label={isLoading ? '停止' : '送信'}
               >
                 {isLoading ? (
-                  <StopCircle className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                  <StopCircle className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
                 ) : (
-                  <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                  <Send className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
                 )}
               </button>
             </div>
-          </div>
 
-          {/* Usage Indicator for Free Users */}
-          {!isGuest && usageData && usageData.plan === 'free' && (
-            <div className="mt-3 mb-2 flex items-center justify-center gap-2 text-xs">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-full border border-purple-200 dark:border-purple-700/50">
-                <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <span className="text-purple-700 dark:text-purple-300 font-medium">
-                  {usageData.remaining}/{usageData.limit} メッセージ残り
-                </span>
-                {usageData.remaining <= 5 && (
-                  <AlertCircle className="w-3.5 h-3.5 text-orange-500" />
+            {/* Advanced Options - Below input, collapsible */}
+            <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-1 border-t border-gray-100 dark:border-gray-700/50">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Expert Mode - Simplified toggle */}
+                  <button
+                    onClick={() => setExpertMode(!expertMode)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95 ${
+                      expertMode
+                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <Sparkles className={`w-3.5 h-3.5 ${expertMode ? 'animate-pulse' : ''}`} />
+                    <span>エキスパート</span>
+                  </button>
+
+                  {/* Source Selection Button - Simplified */}
+                  <button
+                    onClick={() => setIsSourceModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 transition-all text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 active:scale-95"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">ソース</span>
+                    {selectedSourcesCount > 0 && (
+                      <span className="px-1.5 py-0.5 bg-purple-500 text-white rounded-full text-[10px] font-bold min-w-[18px] text-center">
+                        {selectedSourcesCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Usage Indicator - Inline */}
+                {!isGuest && usageData && usageData.plan === 'free' && (
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <Sparkles className="w-3 h-3" />
+                    <span className="font-medium">{usageData.remaining}/{usageData.limit}</span>
+                  </div>
                 )}
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Helper Text - ChatGPT Style with keyboard shortcuts */}
-          <div className="mt-3 flex flex-col items-center justify-center text-xs text-gray-500 dark:text-gray-400 px-2 gap-1.5">
-            <div className="flex items-center gap-3 flex-wrap justify-center">
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[10px] font-mono">Enter</kbd>
-                <span>送信</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[10px] font-mono">Shift</kbd>
-                <span>+</span>
-                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 text-[10px] font-mono">Enter</kbd>
-                <span>改行</span>
-              </span>
-            </div>
-            <p className="text-center">
-              Faroは間違うこともあります。重要な情報は確認することをお勧めします。
+          {/* Helper Text - Minimal */}
+          <div className="mt-2 sm:mt-3 text-center">
+            <p className="text-[11px] sm:text-xs text-gray-400 dark:text-gray-500">
+              Faroは間違うこともあります。重要な情報は確認してください。
             </p>
           </div>
         </div>
