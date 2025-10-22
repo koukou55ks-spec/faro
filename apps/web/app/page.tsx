@@ -1,467 +1,191 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useAuth } from '../lib/hooks/useAuth'
-import { useSubscription } from '../lib/hooks/useSubscription'
-import {
-  Menu, Plus, Sparkles, X, ChevronRight, ChevronDown,
-  FileText, Wallet, TrendingUp, MessageSquare, Trash2,
-  Moon, Sun, Search, Bell, Settings, LogOut, User,
-  Home, BookOpen, PieChart, HelpCircle, Command, CreditCard
-} from 'lucide-react'
-import { NotesPanel } from '../src/features/notes/components/NotesPanel'
-import { ChatPanel } from '../src/features/chat/components/ChatPanel'
-import { useChatStore } from '../src/features/chat/stores/chatStore'
-import { useGuestNotesStore } from '../src/features/notes/stores/guestNotesStore'
-import { NotebookLMView } from '../src/features/documents/components/NotebookLMView'
-import { useDocumentsStore } from '../src/features/documents/stores/documentsStore'
-import { KakeiboPanel } from '../src/features/kakeibo/components/KakeiboPanel'
-import { ReportPanel } from '../src/features/kakeibo/components/ReportPanel'
-import { PricingPlans } from '../src/features/subscription/components/PricingPlans'
-import { UsageIndicator } from '../src/features/subscription/components/UsageIndicator'
-import { useAppStore } from '../lib/store/useAppStore'
-import { createClient } from '@supabase/supabase-js'
-import { useAccessibility } from '../hooks/useAccessibility'
+import { useState, useEffect } from 'react'
+import { Send, Sparkles, TrendingUp, Clock, HelpCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { BottomNavigation } from '../src/components/BottomNavigation'
 
-interface Message {
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
-  expertMode?: boolean
-}
+// 税金質問のサンプル
+const sampleQuestions = [
+  '副業の確定申告は必要？',
+  'これって経費になる？',
+  '医療費控除の計算方法',
+  'ふるさと納税の限度額',
+]
 
-export default function FaroMainPage() {
-  const { user, loading } = useAuth()
-  const { subscription, isPro, isFree } = useSubscription()
-  const { notes: guestNotes } = useGuestNotesStore()
-  const { fetchDocuments, fetchCollections } = useDocumentsStore()
-  const { viewMode, isSidebarOpen, setViewMode, setSidebarOpen, toggleSidebar } = useAppStore()
-  const { conversations, currentConversationId, createConversation, setCurrentConversation, deleteConversation } = useChatStore()
-  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(true)
-  const [currentTime, setCurrentTime] = useState(new Date())
-  const [authToken, setAuthToken] = useState<string | null>(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const { announce } = useAccessibility({ enableKeyboardShortcuts: true })
+// クイックアクション
+const quickActions = [
+  { icon: '📸', label: '領収書撮影', action: 'camera' },
+  { icon: '🧮', label: '税金計算', action: 'calculator' },
+  { icon: '📊', label: '節税診断', action: 'diagnosis' },
+  { icon: '📚', label: '知識検索', action: 'search' },
+]
 
-  const isGuest = !user
-  const currentPlan = subscription?.plan || 'free'
-
-  // Theme management
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark)
-    setIsDarkMode(shouldBeDark)
-    document.documentElement.classList.toggle('dark', shouldBeDark)
-  }, [])
-
-  const toggleDarkMode = () => {
-    const newMode = !isDarkMode
-    setIsDarkMode(newMode)
-    document.documentElement.classList.toggle('dark', newMode)
-    localStorage.setItem('theme', newMode ? 'dark' : 'light')
-  }
-
-  // Auto-open sidebar on desktop, close on mobile
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 1024
-      setIsMobile(mobile)
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true)
-      } else {
-        setSidebarOpen(false)
-      }
+export default function HomePage() {
+  const [message, setMessage] = useState('')
+  const [messages, setMessages] = useState<Array<{role: string, content: string}>>([
+    {
+      role: 'assistant',
+      content: 'こんにちは！ZeiGuideです。税金の疑問をなんでもお聞きください。確定申告、経費判定、節税アドバイスなど、AIがすぐにお答えします。'
     }
+  ])
+  const [isTyping, setIsTyping] = useState(false)
 
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [setSidebarOpen])
+  const handleSend = async () => {
+    if (!message.trim()) return
 
-  // Get auth token for API calls
-  useEffect(() => {
-    if (user) {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.access_token) {
-          setAuthToken(session.access_token)
-          fetchDocuments(session.access_token)
-          fetchCollections(session.access_token)
-        }
+    const userMessage = message
+    setMessage('')
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    setIsTyping(true)
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          userId: 'guest'
+        })
       })
+
+      const data = await response.json()
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: data.response || data.answer
+      }])
+    } catch (error) {
+      console.error('Chat error:', error)
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'すみません、エラーが発生しました。もう一度お試しください。'
+      }])
+    } finally {
+      setIsTyping(false)
     }
-  }, [user, fetchDocuments, fetchCollections])
-
-  // Initial conversation creation
-  useEffect(() => {
-    if (conversations.length === 0 && viewMode === 'chat') {
-      createConversation()
-    }
-  }, [conversations.length, viewMode, createConversation])
-
-  // Auto-close sidebar on mobile when switching views
-  useEffect(() => {
-    if (isMobile && viewMode) {
-      setSidebarOpen(false)
-    }
-  }, [viewMode, isMobile, setSidebarOpen])
-
-  // Time update
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const handleNewChat = () => {
-    createConversation()
-    setViewMode('chat')
-    announce('新しいチャットを作成しました')
-    if (isMobile) {
-      setSidebarOpen(false)
-    }
-  }
-
-  const handleSelectConversation = (convId: string) => {
-    setCurrentConversation(convId)
-    setViewMode('chat')
-    if (isMobile) {
-      setSidebarOpen(false)
-    }
-  }
-
-  const handleDeleteConversation = (convId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (confirm('この会話を削除しますか？')) {
-      deleteConversation(convId)
-    }
-  }
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const menuItems = [
-    { id: 'chat', label: 'チャット', icon: MessageSquare },
-    { id: 'notebook', label: 'ノート', icon: BookOpen },
-    { id: 'kakeibo', label: '家計簿', icon: Wallet },
-    { id: 'report', label: 'レポート', icon: PieChart },
-    { id: 'pricing', label: '料金プラン', icon: CreditCard },
-  ]
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-purple-950 dark:to-gray-900">
-        <div className="flex flex-col items-center space-y-6">
-          <div className="relative">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center animate-pulse">
-              <Sparkles className="w-10 h-10 text-white animate-spin-slow" />
-            </div>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 blur-2xl opacity-50 animate-pulse-slow"></div>
-          </div>
-          <div className="flex space-x-1">
-            <span className="typing-dot"></span>
-            <span className="typing-dot"></span>
-            <span className="typing-dot"></span>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Modern Sidebar */}
-      <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-72 transform transition-all duration-500 ease-out ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-20'
-        } bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 flex-shrink-0`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
-            <div className="flex items-center justify-between">
-              <div className={`flex items-center gap-3 ${!isSidebarOpen && 'lg:justify-center'}`}>
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                  <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-                {(isSidebarOpen || window.innerWidth < 1024) && (
-                  <div className="animate-fade-in">
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                      Faro
-                    </h1>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Your AI Assistant</p>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all lg:hidden"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              ZeiGuide
+            </h1>
+            <p className="text-xs text-gray-500">AI税務アシスタント</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full">
+              <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                オンライン
+              </span>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Search Bar */}
-          {(isSidebarOpen || window.innerWidth < 1024) && (
-            <div className="p-4 animate-fade-in">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="検索..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                  >
-                    <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* New Chat Button */}
-          <div className={`px-4 ${!isSidebarOpen && window.innerWidth >= 1024 ? 'lg:px-2' : ''}`}>
-            <button
-              onClick={handleNewChat}
-              className={`w-full flex items-center ${!isSidebarOpen && window.innerWidth >= 1024 ? 'justify-center' : 'gap-3'} px-4 py-3.5 rounded-xl font-medium bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 group active:scale-95 min-h-[44px]`}
+      {/* Chat Area */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4" style={{ height: 'calc(100vh - 200px)' }}>
+        <AnimatePresence>
+          {messages.map((msg, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" />
-              {(isSidebarOpen || window.innerWidth < 1024) && <span className="animate-fade-in">新規チャット</span>}
-            </button>
-          </div>
-
-          {/* Chat History - Directly under New Chat Button */}
-          {viewMode === 'chat' && (isSidebarOpen || window.innerWidth < 1024) && (
-            <div className="px-4 pt-3 pb-2 animate-fade-in">
-              <button
-                onClick={() => setIsChatHistoryOpen(!isChatHistoryOpen)}
-                className="w-full flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                <span>履歴 ({conversations.length})</span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isChatHistoryOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {isChatHistoryOpen && (
-                <div className="mt-2 space-y-1 max-h-64 overflow-y-auto animate-slide-in-bottom">
-                  {conversations.length === 0 ? (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">まだ会話がありません</p>
-                  ) : (
-                    conversations.map((conv) => (
-                      <div
-                        key={conv.id}
-                        className={`group w-full px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                          conv.id === currentConversationId
-                            ? 'bg-purple-50 dark:bg-purple-900/20 border-l-2 border-purple-500'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <MessageSquare className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                            conv.id === currentConversationId ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
-                          }`} />
-                          <button
-                            onClick={() => handleSelectConversation(conv.id)}
-                            className="flex-1 min-w-0 text-left"
-                          >
-                            <p className="truncate text-gray-900 dark:text-gray-100">{conv.title}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                              {new Date(conv.updatedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
-                            </p>
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteConversation(conv.id, e)}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-all duration-200 flex-shrink-0"
-                            aria-label="会話を削除"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Navigation Menu */}
-          <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
-            {menuItems.map((item) => {
-              const Icon = item.icon
-              const isActive = viewMode === item.id
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setViewMode(item.id as any)
-                    if (isMobile) setSidebarOpen(false)
-                  }}
-                  className={`w-full flex items-center ${!isSidebarOpen && window.innerWidth >= 1024 ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group active:scale-95 min-h-[44px] ${
-                    isActive
-                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  <div className={`flex items-center ${!isSidebarOpen && window.innerWidth >= 1024 ? '' : 'gap-3'}`}>
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'} group-hover:scale-110 transition-transform`} />
-                    {(isSidebarOpen || window.innerWidth < 1024) && (
-                      <span className="animate-fade-in">{item.label}</span>
-                    )}
+              <div className={`max-w-[80%] ${
+                msg.role === 'user'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+              } rounded-2xl px-4 py-3 shadow-sm`}>
+                {msg.role === 'assistant' && (
+                  <div className="flex items-center space-x-1 mb-1">
+                    <Sparkles className="w-3 h-3 text-blue-500" />
+                    <span className="text-xs font-medium text-blue-500">ZeiGuide</span>
                   </div>
-                </button>
-              )
-            })}
-          </nav>
-
-          {/* Usage Indicator */}
-          {user && <UsageIndicator />}
-
-          {/* Sidebar Footer */}
-          <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50">
-            {(isSidebarOpen || window.innerWidth < 1024) ? (
-              <div className="space-y-2 animate-fade-in">
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-sm">
-                  <Settings className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-700 dark:text-gray-300">設定</span>
-                </button>
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-sm">
-                  <HelpCircle className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-700 dark:text-gray-300">ヘルプ</span>
-                </button>
-                {user && (
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-sm">
-                    <LogOut className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700 dark:text-gray-300">ログアウト</span>
-                  </button>
                 )}
+                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
               </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
-                  <Settings className="w-4 h-4 text-gray-500" />
-                </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
-                  <HelpCircle className="w-4 h-4 text-gray-500" />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </aside>
-
-      {/* Sidebar Overlay (Mobile) */}
-      {isSidebarOpen && window.innerWidth < 1024 && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Modern Header */}
-        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => toggleSidebar()}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all lg:hidden"
-              >
-                <Menu className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-              </button>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {viewMode === 'chat' ? 'AI チャット' :
-                   viewMode === 'notebook' ? 'ノート' :
-                   viewMode === 'kakeibo' ? '家計簿' :
-                   viewMode === 'report' ? 'レポート' :
-                   viewMode === 'pricing' ? '料金プラン' :
-                   'Faro'}
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {isGuest ? 'ゲストモード' : user?.email}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Notifications */}
-              <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group">
-                <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300 group-hover:scale-110 transition-transform" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              </button>
-
-              {/* Dark Mode Toggle */}
-              <button
-                onClick={toggleDarkMode}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group"
-              >
-                {isDarkMode ? (
-                  <Sun className="w-5 h-5 text-yellow-500 group-hover:rotate-180 transition-all duration-300" />
-                ) : (
-                  <Moon className="w-5 h-5 text-gray-700 group-hover:rotate-12 transition-all duration-300" />
-                )}
-              </button>
-
-              {/* Profile */}
-              <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+            </motion.div>
+          ))}
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex justify-start"
+            >
+              <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
                 </div>
-                {window.innerWidth >= 1280 && (
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
-                )}
-              </button>
-            </div>
-          </div>
-        </header>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-        {/* Content Area with Animation */}
-        <div className="flex-1 overflow-hidden bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-          <div className="h-full animate-fade-in">
-            {viewMode === 'chat' ? (
-              <div className="h-full">
-                <ChatPanel userId={user?.id} />
-              </div>
-            ) : viewMode === 'notebook' ? (
-              <div className="h-full">
-                <NotebookLMView authToken={authToken || undefined} isGuest={isGuest} />
-              </div>
-            ) : viewMode === 'kakeibo' ? (
-              <div className="h-full">
-                <KakeiboPanel userId={user?.id} />
-              </div>
-            ) : viewMode === 'report' ? (
-              <div className="h-full">
-                <ReportPanel userId={user?.id} />
-              </div>
-            ) : viewMode === 'pricing' ? (
-              <div className="h-full overflow-y-auto">
-                <PricingPlans currentPlan={currentPlan} />
-              </div>
-            ) : null}
-          </div>
+      {/* Quick Actions */}
+      <div className="px-4 py-2">
+        <div className="flex space-x-2 overflow-x-auto pb-2">
+          {quickActions.map((action) => (
+            <button
+              key={action.action}
+              className="flex-shrink-0 flex flex-col items-center p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow"
+            >
+              <span className="text-2xl mb-1">{action.icon}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                {action.label}
+              </span>
+            </button>
+          ))}
         </div>
-      </main>
+      </div>
+
+      {/* Sample Questions */}
+      <div className="px-4 pb-2">
+        <div className="flex items-center space-x-2 overflow-x-auto">
+          <HelpCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          {sampleQuestions.map((question) => (
+            <button
+              key={question}
+              onClick={() => setMessage(question)}
+              className="flex-shrink-0 px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs hover:bg-gray-200 dark:hover:bg-gray-600"
+            >
+              {question}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Input Area */}
+      <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3">
+        <div className="flex items-center space-x-2">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="税金の質問を入力..."
+            className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!message.trim()}
+            className="p-2 bg-blue-500 text-white rounded-full disabled:opacity-50 hover:bg-blue-600 transition-colors"
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom Navigation */}
+      <BottomNavigation />
     </div>
   )
 }
