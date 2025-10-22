@@ -7,31 +7,31 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 
 export const metadata: Metadata = {
-  title: 'Faro - あなたのパーソナルCFO',
-  description: '税務・財務・投資に関する専門家レベルの金融アドバイスをAIが提供。あなたの一生涯の金融思考パートナー。',
-  keywords: ['金融アドバイス', 'AI CFO', '税務相談', '投資戦略', '財務管理', '確定申告', 'パーソナルファイナンス'],
-  authors: [{ name: 'Faro Team' }],
+  title: 'ZeiGuide - 税金の疑問を即解決 | AI税務アシスタント',
+  description: '確定申告、経費判定、節税アドバイスをAIが即答。freee・マネーフォワード等のツール比較、税理士紹介も。フリーランス・副業の税金相談なら。',
+  keywords: ['確定申告', 'やり方', '税金相談', '経費判定', '節税', 'freee', 'マネーフォワード', '税理士紹介', 'フリーランス', '副業', '個人事業主', 'e-Tax'],
+  authors: [{ name: 'ZeiGuide Team' }],
   metadataBase: new URL('https://taxhack.vercel.app'),
   openGraph: {
-    title: 'Faro - パーソナルCFO AI',
-    description: '知識格差を是正し、誰もが富裕層の知恵にアクセスできる',
+    title: 'ZeiGuide - 税金の疑問を即解決',
+    description: '確定申告から経費判定まで、AIが24時間いつでも回答。税理士費用の1/10以下で専門知識が手に入る。',
     type: 'website',
     locale: 'ja_JP',
-    siteName: 'Faro',
+    siteName: 'ZeiGuide',
     images: [
       {
-        url: '/api/og?title=Faro&description=Your%20lifelong%20financial%20thinking%20partner',
+        url: '/api/og?title=ZeiGuide&description=税金の疑問を即解決',
         width: 1200,
         height: 630,
-        alt: 'Faro - Your Personal CFO',
+        alt: 'ZeiGuide - AI税務アシスタント',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Faro - あなたのパーソナルCFO',
-    description: '税務・財務・投資に関する専門家レベルの金融アドバイスをAIが提供',
-    images: ['/api/og?title=Faro&description=Your%20lifelong%20financial%20thinking%20partner'],
+    title: 'ZeiGuide - 税金の疑問を即解決',
+    description: '確定申告、経費判定、節税アドバイスをAIが即答。freee・マネーフォワード等のツール比較も。',
+    images: ['/api/og?title=ZeiGuide&description=税金の疑問を即解決'],
   },
   robots: {
     index: true,
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Faro',
+    title: 'ZeiGuide',
   },
 }
 
