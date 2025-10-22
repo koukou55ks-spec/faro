@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ViewMode = 'chat' | 'notes' | 'kakeibo' | 'documents' | 'notebook' | 'report' | 'pricing'
+export type ViewMode = 'chat' | 'notes' | 'kakeibo' | 'documents' | 'notebook' | 'report' | 'pricing' | 'tools' | 'mypage'
 
 interface AppState {
   viewMode: ViewMode

@@ -6,7 +6,7 @@ import { ExternalLink } from 'lucide-react'
 interface AffiliateLinkProps {
   service: keyof typeof affiliateLinks
   children?: React.ReactNode
-  source?: 'chat' | 'article' | 'comparison'
+  source?: 'chat' | 'article' | 'comparison' | 'connect'
   userId?: string
   className?: string
   showIcon?: boolean

@@ -56,7 +56,7 @@ export const affiliateLinks: Record<string, AffiliateLink> = {
 export async function trackAffiliateClick(
   service: string,
   userId?: string,
-  source?: 'chat' | 'article' | 'comparison'
+  source?: 'chat' | 'article' | 'comparison' | 'connect'
 ): Promise<void> {
   try {
     await fetch('/api/analytics/affiliate-click', {

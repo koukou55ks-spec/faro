@@ -1,191 +1,500 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Send, Sparkles, TrendingUp, Clock, HelpCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { useAuth } from '../lib/hooks/useAuth'
+import { useSubscription } from '../lib/hooks/useSubscription'
+import {
+  MessageSquare, Search, Calculator, User as UserIcon, Users,
+  Menu, Plus, Moon, Sun, Bell, Settings, LogOut, X, ChevronDown,
+  FileText, TrendingUp, Receipt, Camera, PieChart, Trash2
+} from 'lucide-react'
+import { ChatPanel } from '../src/features/chat/components/ChatPanel'
+import { NotesPanel } from '../src/features/notes/components/NotesPanel'
+import { KakeiboPanel } from '../src/features/kakeibo/components/KakeiboPanel'
+import { useChatStore } from '../src/features/chat/stores/chatStore'
+import { useGuestNotesStore } from '../src/features/notes/stores/guestNotesStore'
+import { useDocumentsStore } from '../src/features/documents/stores/documentsStore'
+import { useAppStore } from '../lib/store/useAppStore'
+import { createClient } from '@supabase/supabase-js'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BottomNavigation } from '../src/components/BottomNavigation'
+import { UsageIndicator } from '../src/features/subscription/components/UsageIndicator'
+import dynamic from 'next/dynamic'
 
-// 税金質問のサンプル
-const sampleQuestions = [
-  '副業の確定申告は必要？',
-  'これって経費になる？',
-  '医療費控除の計算方法',
-  'ふるさと納税の限度額',
+// Import pages with dynamic loading for better performance
+const SearchPage = dynamic(() => import('./search/page'), { ssr: false })
+const ToolsPage = dynamic(() => import('./tools/page'), { ssr: false })
+const MyPage = dynamic(() => import('./mypage/page'), { ssr: false })
+const ConnectPage = dynamic(() => import('./connect/page'), { ssr: false })
+
+interface NavItem {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  id: 'home' | 'search' | 'tools' | 'mypage' | 'connect'
+  badge?: number
+}
+
+const navItems: NavItem[] = [
+  { icon: MessageSquare, label: 'ホーム', id: 'home' },
+  { icon: Search, label: 'さがす', id: 'search' },
+  { icon: Calculator, label: 'ツール', id: 'tools' },
+  { icon: UserIcon, label: 'マイページ', id: 'mypage' },
+  { icon: Users, label: 'つながる', id: 'connect' }
 ]
 
-// クイックアクション
-const quickActions = [
-  { icon: '📸', label: '領収書撮影', action: 'camera' },
-  { icon: '🧮', label: '税金計算', action: 'calculator' },
-  { icon: '📊', label: '節税診断', action: 'diagnosis' },
-  { icon: '📚', label: '知識検索', action: 'search' },
-]
+export default function MainApp() {
+  const { user, loading } = useAuth()
+  const { subscription, isPro, isFree } = useSubscription()
+  const { notes: guestNotes } = useGuestNotesStore()
+  const { fetchDocuments, fetchCollections } = useDocumentsStore()
+  const { viewMode, setViewMode } = useAppStore()
+  const {
+    conversations,
+    currentConversationId,
+    createConversation,
+    setCurrentConversation,
+    deleteConversation
+  } = useChatStore()
 
-export default function HomePage() {
-  const [message, setMessage] = useState('')
-  const [messages, setMessages] = useState<Array<{role: string, content: string}>>([
-    {
-      role: 'assistant',
-      content: 'こんにちは！ZeiGuideです。税金の疑問をなんでもお聞きください。確定申告、経費判定、節税アドバイスなど、AIがすぐにお答えします。'
+  const [activeTab, setActiveTab] = useState<'home' | 'search' | 'tools' | 'mypage' | 'connect'>('home')
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [authToken, setAuthToken] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(true)
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  const isGuest = !user
+  const currentPlan = subscription?.plan || 'free'
+
+  // Theme management
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme')
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark)
+    setIsDarkMode(shouldBeDark)
+    document.documentElement.classList.toggle('dark', shouldBeDark)
+  }, [])
+
+  const toggleDarkMode = () => {
+    const newMode = !isDarkMode
+    setIsDarkMode(newMode)
+    document.documentElement.classList.toggle('dark', newMode)
+    localStorage.setItem('theme', newMode ? 'dark' : 'light')
+  }
+
+  // Time update
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Responsive check
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024
+      setIsMobile(mobile)
+      if (!mobile) {
+        setIsSidebarOpen(true)
+      } else {
+        setIsSidebarOpen(false)
+      }
     }
-  ])
-  const [isTyping, setIsTyping] = useState(false)
 
-  const handleSend = async () => {
-    if (!message.trim()) return
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
-    const userMessage = message
-    setMessage('')
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
-    setIsTyping(true)
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          userId: 'guest'
-        })
+  // Get auth token
+  useEffect(() => {
+    if (user) {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.access_token) {
+          setAuthToken(session.access_token)
+          fetchDocuments(session.access_token)
+          fetchCollections(session.access_token)
+        }
       })
+    }
+  }, [user, fetchDocuments, fetchCollections])
 
-      const data = await response.json()
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: data.response || data.answer
-      }])
-    } catch (error) {
-      console.error('Chat error:', error)
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'すみません、エラーが発生しました。もう一度お試しください。'
-      }])
-    } finally {
-      setIsTyping(false)
+  const handleNewConversation = () => {
+    const newConversationId = createConversation()
+    setCurrentConversation(newConversationId)
+  }
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <div className="flex flex-col lg:flex-row h-full">
+            {/* Desktop Sidebar with Chat History */}
+            {!isMobile && (
+              <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+                  <button
+                    onClick={handleNewConversation}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl flex items-center justify-center space-x-2 transition-all shadow-lg"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>新しいチャット</span>
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      チャット履歴
+                    </h3>
+                    <button
+                      onClick={() => setIsChatHistoryOpen(!isChatHistoryOpen)}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isChatHistoryOpen ? '' : '-rotate-90'}`} />
+                    </button>
+                  </div>
+
+                  <AnimatePresence>
+                    {isChatHistoryOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="space-y-1"
+                      >
+                        {conversations.map((conv) => (
+                          <div
+                            key={conv.id}
+                            className={`group relative rounded-lg transition-all ${
+                              currentConversationId === conv.id
+                                ? 'bg-blue-50 dark:bg-blue-900/20'
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                            }`}
+                          >
+                            <button
+                              onClick={() => setCurrentConversation(conv.id)}
+                              className="w-full text-left py-2.5 px-3"
+                            >
+                              <div className="flex items-start space-x-2">
+                                <MessageSquare className="w-4 h-4 mt-0.5 text-gray-500 dark:text-gray-400" />
+                                <div className="flex-1">
+                                  <span className="text-sm font-medium text-gray-900 dark:text-white truncate block">
+                                    {conv.title}
+                                  </span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {new Date(conv.updatedAt).toLocaleDateString('ja-JP')}
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => deleteConversation(conv.id)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-opacity"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </button>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* User Info */}
+                <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <UserIcon className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {isGuest ? 'ゲスト' : user?.email}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {currentPlan === 'pro' ? 'Pro' : 'Free'}プラン
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Main Chat Area */}
+            <div className="flex-1 flex flex-col">
+              {/* Header */}
+              <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {isMobile && (
+                      <button
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                      >
+                        <Menu className="w-5 h-5" />
+                      </button>
+                    )}
+                    <div>
+                      <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                        ZeiGuide AI
+                      </h1>
+                      <p className="text-xs text-gray-500">
+                        {currentTime.toLocaleTimeString('ja-JP')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <UsageIndicator />
+                    <button
+                      onClick={toggleDarkMode}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    >
+                      {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    </button>
+                    <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                      <Bell className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chat Panel */}
+              <div className="flex-1 overflow-hidden">
+                <ChatPanel
+                  userId={user?.id || 'guest'}
+                />
+              </div>
+            </div>
+
+            {/* Mobile Sidebar Overlay */}
+            {isMobile && (
+              <AnimatePresence>
+                {isSidebarOpen && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.5 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 bg-black z-40"
+                      onClick={() => setIsSidebarOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ x: -300 }}
+                      animate={{ x: 0 }}
+                      exit={{ x: -300 }}
+                      className="fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 flex flex-col"
+                    >
+                      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+                        <div className="flex items-center justify-between mb-4">
+                          <h2 className="font-semibold text-gray-900 dark:text-white">チャット履歴</h2>
+                          <button
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => {
+                            handleNewConversation()
+                            setIsSidebarOpen(false)
+                          }}
+                          className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                        >
+                          新しいチャット
+                        </button>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-4">
+                        {conversations.map((conv) => (
+                          <button
+                            key={conv.id}
+                            onClick={() => {
+                              setCurrentConversation(conv.id)
+                              setIsSidebarOpen(false)
+                            }}
+                            className={`w-full text-left py-2 px-3 rounded-lg transition-colors mb-2 ${
+                              currentConversationId === conv.id
+                                ? 'bg-blue-100 dark:bg-blue-900'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                            }`}
+                          >
+                            <div className="text-sm font-medium truncate">{conv.title}</div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(conv.updatedAt).toLocaleDateString('ja-JP')}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            )}
+          </div>
+        )
+
+      case 'search':
+        return <SearchPage />
+
+      case 'tools':
+        return (
+          <div className="flex flex-col lg:flex-row h-full">
+            <div className="flex-1">
+              <ToolsPage />
+            </div>
+            {/* 家計簿機能をデスクトップで表示 */}
+            {!isMobile && viewMode === 'kakeibo' && (
+              <div className="w-96 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+                <div className="h-full flex flex-col">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">経費管理</h2>
+                    <button
+                      onClick={() => setViewMode('tools')}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <KakeiboPanel />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      case 'mypage':
+        return (
+          <div className="flex flex-col lg:flex-row h-full">
+            <div className="flex-1">
+              <MyPage />
+            </div>
+            {/* ノート機能をデスクトップで表示 */}
+            {!isMobile && viewMode === 'notes' && (
+              <div className="w-96 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+                <div className="h-full flex flex-col">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">ノート</h2>
+                    <button
+                      onClick={() => setViewMode('mypage')}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <NotesPanel userId={user?.id || 'guest'} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      case 'connect':
+        return <ConnectPage />
+
+      default:
+        return null
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              ZeiGuide
-            </h1>
-            <p className="text-xs text-gray-500">AI税務アシスタント</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full">
-              <span className="text-xs font-medium text-green-700 dark:text-green-300">
-                オンライン
-              </span>
-            </div>
-          </div>
-        </div>
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden">
+        {renderContent()}
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4" style={{ height: 'calc(100vh - 200px)' }}>
-        <AnimatePresence>
-          {messages.map((msg, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`max-w-[80%] ${
-                msg.role === 'user'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
-              } rounded-2xl px-4 py-3 shadow-sm`}>
-                {msg.role === 'assistant' && (
-                  <div className="flex items-center space-x-1 mb-1">
-                    <Sparkles className="w-3 h-3 text-blue-500" />
-                    <span className="text-xs font-medium text-blue-500">ZeiGuide</span>
+      {/* Bottom Navigation for Mobile */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-30 safe-bottom">
+          <div className="flex justify-around items-center h-16 px-2">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              const isActive = activeTab === item.id
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className="flex flex-col items-center justify-center flex-1 py-2 px-1 relative"
+                >
+                  <div className="relative">
+                    <Icon
+                      className={`w-6 h-6 transition-colors ${
+                        isActive
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-gray-500 dark:text-gray-400'
+                      }`}
+                    />
+                    {item.badge && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                        {item.badge}
+                      </span>
+                    )}
                   </div>
-                )}
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-              </div>
-            </motion.div>
-          ))}
-          {isTyping && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-start"
-            >
-              <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="px-4 py-2">
-        <div className="flex space-x-2 overflow-x-auto pb-2">
-          {quickActions.map((action) => (
-            <button
-              key={action.action}
-              className="flex-shrink-0 flex flex-col items-center p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-            >
-              <span className="text-2xl mb-1">{action.icon}</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                {action.label}
-              </span>
-            </button>
-          ))}
+                  <span
+                    className={`text-xs mt-1 transition-colors ${
+                      isActive
+                        ? 'text-blue-600 dark:text-blue-400 font-medium'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                  {isActive && (
+                    <motion.div
+                      className="absolute top-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"
+                      layoutId="activeTab"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Sample Questions */}
-      <div className="px-4 pb-2">
-        <div className="flex items-center space-x-2 overflow-x-auto">
-          <HelpCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-          {sampleQuestions.map((question) => (
-            <button
-              key={question}
-              onClick={() => setMessage(question)}
-              className="flex-shrink-0 px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs hover:bg-gray-200 dark:hover:bg-gray-600"
-            >
-              {question}
-            </button>
-          ))}
+      {/* Desktop Tab Navigation */}
+      {!isMobile && (
+        <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto flex justify-center space-x-8 px-4 py-2">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              const isActive = activeTab === item.id
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
-
-      {/* Input Area */}
-      <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3">
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="税金の質問を入力..."
-            className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!message.trim()}
-            className="p-2 bg-blue-500 text-white rounded-full disabled:opacity-50 hover:bg-blue-600 transition-colors"
-          >
-            <Send className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Bottom Navigation */}
-      <BottomNavigation />
+      )}
     </div>
   )
 }
