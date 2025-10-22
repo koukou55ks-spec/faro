@@ -712,21 +712,21 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                 </p>
               </div>
 
-              {/* Suggestions */}
+              {/* Suggestions - Gemini style */}
               <div className="w-full max-w-2xl animate-fadeIn" style={{ animationDelay: '0.1s' }}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   {SUGGESTIONS.map((suggestion, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleSuggestionClick(suggestion.text)}
-                      className="group relative p-4 rounded-2xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-lg transition-all duration-300 text-left overflow-hidden"
+                      className="group relative p-3.5 sm:p-4 rounded-[20px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-left overflow-hidden"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/10 dark:to-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 dark:from-indigo-900/10 dark:via-purple-900/10 dark:to-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                       <div className="relative flex items-center gap-3">
-                        <div className="text-2xl flex-shrink-0 transform group-hover:scale-110 transition-transform duration-300">
+                        <div className="text-xl sm:text-2xl flex-shrink-0 transform group-hover:scale-110 transition-transform duration-200">
                           {suggestion.icon}
                         </div>
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                        <p className="text-[13px] sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors leading-snug">
                           {suggestion.text}
                         </p>
                       </div>
@@ -738,31 +738,31 @@ export function ChatPanel({ userId }: ChatPanelProps) {
           ) : (
             <>
               {messages.map((msg, idx) => (
-                <div key={idx} className="mb-8 animate-fadeIn">
+                <div key={idx} className="mb-6 animate-fadeIn">
                   {msg.role === 'user' ? (
-                    // User Message - Clean bubble design with edit/delete
+                    // User Message - Gemini-style polished bubble
                     <div className="group flex justify-end">
-                      <div className="max-w-[85%] sm:max-w-[75%]">
+                      <div className="max-w-[80%] sm:max-w-[70%]">
                         {editingMessageIndex === idx ? (
                           // Edit mode
-                          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-lg border-2 border-purple-500">
+                          <div className="bg-white dark:bg-gray-800 rounded-[20px] p-4 shadow-lg border border-purple-200 dark:border-purple-700">
                             <textarea
                               value={editingContent}
                               onChange={(e) => setEditingContent(e.target.value)}
-                              className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:border-purple-500 text-gray-900 dark:text-gray-100 text-[15px] leading-relaxed resize-none"
+                              className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:border-purple-500 text-gray-900 dark:text-gray-100 text-[15px] leading-[1.6] resize-none"
                               rows={4}
                               autoFocus
                             />
                             <div className="flex gap-2 mt-3">
                               <button
                                 onClick={handleSaveEdit}
-                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-medium transition-all shadow-sm hover:shadow active:scale-95"
                               >
                                 保存
                               </button>
                               <button
                                 onClick={handleCancelEdit}
-                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
+                                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all active:scale-95"
                               >
                                 キャンセル
                               </button>
@@ -770,31 +770,31 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                           </div>
                         ) : (
                           <>
-                            <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-3xl rounded-tr-md px-5 py-3 shadow-md">
-                              <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                            <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 text-white rounded-[24px] rounded-br-md px-4 py-3 sm:px-5 sm:py-3.5 shadow-sm hover:shadow-md transition-shadow">
+                              <div className="text-[15px] sm:text-base leading-[1.6] whitespace-pre-wrap break-words font-normal">
                                 {msg.content}
                               </div>
                             </div>
-                            <div className="flex items-center justify-between mt-1.5 px-1 gap-2">
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="flex items-center justify-between mt-2 px-2 gap-2">
+                              <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                 <button
                                   onClick={() => handleEditMessage(idx, msg.content)}
-                                  className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-all"
                                   aria-label="メッセージを編集"
                                   title="編集"
                                 >
-                                  <Edit2 className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                                  <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-400" strokeWidth={2} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteMessage(idx)}
-                                  className="p-1 rounded-md hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+                                  className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-100 dark:active:bg-red-900/30 transition-all"
                                   aria-label="メッセージを削除"
                                   title="削除"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
+                                  <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" strokeWidth={2} />
                                 </button>
                               </div>
-                              <div className="text-xs text-gray-400 dark:text-gray-500">
+                              <div className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
                                 {new Date(msg.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                               </div>
                             </div>
@@ -803,59 +803,59 @@ export function ChatPanel({ userId }: ChatPanelProps) {
                       </div>
                     </div>
                   ) : (
-                    // Assistant Message - Professional card style with copy button
-                    <div className="group flex items-start gap-3.5">
-                      <div className="w-8 h-8 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
-                        <Sparkles className="w-4.5 h-4.5 text-white" />
+                    // Assistant Message - Gemini-level polish
+                    <div className="group flex items-start gap-3 sm:gap-4">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 flex items-center justify-center shadow-md">
+                        <Sparkles className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-white" strokeWidth={2} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-3xl rounded-tl-md px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700/50">
-                          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-headings:mb-2 prose-headings:mt-3 prose-pre:my-3 prose-code:text-sm">
+                        <div className="bg-gray-50 dark:bg-gray-800/60 rounded-[24px] rounded-tl-sm px-4 py-3.5 sm:px-5 sm:py-4 shadow-sm hover:shadow transition-shadow border border-gray-100/50 dark:border-gray-700/30">
+                          <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none prose-p:my-2 prose-p:leading-[1.6] prose-headings:mb-2.5 prose-headings:mt-4 prose-pre:my-3 prose-code:text-sm prose-li:my-1">
                             <MarkdownRenderer content={msg.content} />
                           </div>
                         </div>
-                        <div className="flex items-center justify-between mt-2 px-1 gap-3">
+                        <div className="flex items-center justify-between mt-2 px-2 gap-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                            <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
                               {new Date(msg.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             {msg.expertMode && (
-                              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
-                                <span>⚖️</span>
+                              <div className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-[11px] font-semibold border border-purple-200 dark:border-purple-700/50">
+                                <span className="text-xs">⚖️</span>
                                 <span>エキスパート</span>
                               </div>
                             )}
                           </div>
-                          {/* Action buttons for assistant messages */}
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          {/* Action buttons - Gemini style */}
+                          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <button
                               onClick={() => handleCopyMessage(msg.content, idx)}
-                              className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-all"
                               aria-label="メッセージをコピー"
                               title="コピー"
                             >
                               {copiedMessageId === idx ? (
-                                <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" strokeWidth={2.5} />
+                                <Check className="w-4 h-4 text-green-600 dark:text-green-400" strokeWidth={2.5} />
                               ) : (
-                                <Copy className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" strokeWidth={2} />
+                                <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" strokeWidth={2} />
                               )}
                             </button>
                             <button
                               onClick={() => handleRegenerateResponse(idx)}
                               disabled={isLoading}
-                              className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                               aria-label="回答を再生成"
                               title="再生成"
                             >
-                              <RefreshCw className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                              <RefreshCw className="w-4 h-4 text-gray-600 dark:text-gray-400" strokeWidth={2} />
                             </button>
                             <button
                               onClick={() => handleDeleteMessage(idx)}
-                              className="p-1 rounded-md hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+                              className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-100 dark:active:bg-red-900/30 transition-all"
                               aria-label="メッセージを削除"
                               title="削除"
                             >
-                              <Trash2 className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
+                              <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" strokeWidth={2} />
                             </button>
                           </div>
                         </div>
@@ -866,20 +866,20 @@ export function ChatPanel({ userId }: ChatPanelProps) {
               ))}
 
               {isLoading && (
-                <div className="mb-8 animate-fadeIn">
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-8 h-8 flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
-                      <Sparkles className="w-4.5 h-4.5 text-white animate-pulse" />
+                <div className="mb-6 animate-fadeIn">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 flex items-center justify-center shadow-md">
+                      <Sparkles className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-white animate-pulse" strokeWidth={2} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-3xl rounded-tl-md px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700/50">
-                        <div className="flex gap-1.5">
+                      <div className="bg-gray-50 dark:bg-gray-800/60 rounded-[24px] rounded-tl-sm px-4 py-3.5 sm:px-5 sm:py-4 shadow-sm border border-gray-100/50 dark:border-gray-700/30">
+                        <div className="flex gap-2">
                           <span className="typing-dot"></span>
                           <span className="typing-dot"></span>
                           <span className="typing-dot"></span>
                         </div>
                       </div>
-                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 px-1">
+                      <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-2 px-2 font-medium">
                         考え中...
                       </div>
                     </div>
@@ -892,14 +892,14 @@ export function ChatPanel({ userId }: ChatPanelProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Scroll to bottom button */}
+        {/* Scroll to bottom button - Gemini style */}
         {showScrollButton && (
           <button
             onClick={scrollToBottom}
-            className="fixed bottom-36 sm:bottom-32 right-4 sm:right-8 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-xl transition-all duration-200 z-10 animate-fadeIn active:scale-95"
+            className="fixed bottom-36 sm:bottom-32 right-4 sm:right-8 p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200/80 dark:border-gray-700/80 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 z-10 animate-fadeIn backdrop-blur-sm"
             aria-label="最下部にスクロール"
           >
-            <ArrowDown className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <ArrowDown className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={2} />
           </button>
         )}
       </div>
