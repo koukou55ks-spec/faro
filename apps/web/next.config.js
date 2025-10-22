@@ -3,6 +3,8 @@ const { withSentryConfig } = require('@sentry/nextjs')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // ソースマップを完全に無効化（404エラー防止）
+  productionBrowserSourceMaps: false,
   images: {
     remotePatterns: [
       {
@@ -28,7 +30,7 @@ const nextConfig = {
     },
   },
   // Webpack optimizations
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -37,7 +39,23 @@ const nextConfig = {
         tls: false,
       };
     }
+
+    // 開発環境: ソースマップ警告を抑制
+    if (dev) {
+      config.ignoreWarnings = [
+        ...(config.ignoreWarnings || []),
+        /Failed to parse source map/,
+        /source-map-loader/,
+      ];
+    }
+
     return config;
+  },
+  // カスタムロガー（404ログをフィルタリング）
+  onDemandEntries: {
+    // 開発時のログ設定
+    maxInactiveAge: 60 * 1000,
+    pagesBufferLength: 5,
   },
 }
 

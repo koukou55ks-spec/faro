@@ -103,6 +103,20 @@ rm -rf apps/web/.next apps/web/.turbo node_modules/.cache
 pnpm dev
 ```
 
+### 4. 404ソースマップエラー
+
+開発環境で大量の404エラー（`GET /_next/src/helper.ts 404`等）が出る場合:
+
+```
+これは無害です - ブラウザのDevToolsがSupabaseライブラリの
+ソースマップを要求しているだけで、アプリの動作には影響しません。
+
+本番環境では出ません（next.config.jsで無効化済み）。
+
+完全に消すには: ブラウザのDevTools設定で
+「Enable JavaScript source maps」をオフにしてください。
+```
+
 ### 3. 環境変数
 
 ```typescript

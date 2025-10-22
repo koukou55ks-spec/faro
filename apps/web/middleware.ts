@@ -100,6 +100,20 @@ async function handleRateLimit(request: NextRequest) {
  * Main Middleware
  */
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // ソースマップリクエストを静かに404で返す（ログを汚染しない）
+  const isSourceMapRequest =
+    pathname.includes('/src/') ||
+    pathname.includes('/_next/src/') ||
+    pathname.endsWith('.ts') ||
+    pathname.endsWith('.js.map')
+
+  if (isSourceMapRequest) {
+    // 静かに404を返す（Next.jsのログに表示されない）
+    return new NextResponse(null, { status: 404 })
+  }
+
   const response = NextResponse.next()
 
   // Apply security headers
@@ -109,7 +123,7 @@ export async function middleware(request: NextRequest) {
   })
 
   // Apply rate limiting only to API routes
-  if (request.nextUrl.pathname.startsWith('/api')) {
+  if (pathname.startsWith('/api')) {
     try {
       const rateLimitResponse = await handleRateLimit(request)
       if (rateLimitResponse) {
