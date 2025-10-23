@@ -5,7 +5,7 @@ import { useAuth } from '../lib/hooks/useAuth'
 import { useSubscription } from '../lib/hooks/useSubscription'
 import {
   MessageSquare, Search, User as UserIcon, Users,
-  Menu, Plus, Moon, Sun, X, ChevronDown, Trash2
+  Menu, Plus, Moon, Sun, X, ChevronDown, Trash2, Sparkles
 } from 'lucide-react'
 import { ChatPanel } from '../components/features/chat/components/ChatPanel'
 import { NotesPanel } from '../components/features/notes/components/NotesPanel'
@@ -18,19 +18,21 @@ import dynamic from 'next/dynamic'
 
 // Import pages with dynamic loading for better performance
 const SearchPage = dynamic(() => import('./search/page').then(mod => mod.default), { ssr: false })
+const AgentsPage = dynamic(() => import('./agents/page').then(mod => mod.default), { ssr: false })
 const MyPage = dynamic(() => import('./mypage/page').then(mod => mod.default), { ssr: false })
 const ConnectPage = dynamic(() => import('./connect/page').then(mod => mod.default), { ssr: false })
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   label: string
-  id: 'home' | 'search' | 'mypage' | 'connect'
+  id: 'home' | 'search' | 'agents' | 'mypage' | 'connect'
   badge?: number
 }
 
 const navItems: NavItem[] = [
   { icon: MessageSquare, label: 'ホーム', id: 'home' },
   { icon: Search, label: 'ライブラリ', id: 'search' },
+  { icon: Sparkles, label: 'エージェント', id: 'agents' },
   { icon: UserIcon, label: 'マイページ', id: 'mypage' },
   { icon: Users, label: 'エキスパート', id: 'connect' }
 ]
@@ -48,7 +50,7 @@ export default function MainApp() {
     deleteConversation
   } = useChatStore()
 
-  const [activeTab, setActiveTab] = useState<'home' | 'search' | 'mypage' | 'connect'>('home')
+  const [activeTab, setActiveTab] = useState<'home' | 'search' | 'agents' | 'mypage' | 'connect'>('home')
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -396,6 +398,9 @@ export default function MainApp() {
 
       case 'search':
         return <SearchPage />
+
+      case 'agents':
+        return <AgentsPage />
 
       case 'mypage':
         return (
