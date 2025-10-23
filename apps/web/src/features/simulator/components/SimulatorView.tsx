@@ -520,12 +520,24 @@ function InvestmentSimulator() {
 export function SimulatorView({ moduleId, moduleTitle, onBack }: SimulatorViewProps) {
   const renderSimulator = () => {
     switch (moduleId) {
-      case 'f3': // ふるさと納税限度額
+      case 'sim-furusato-nozei': // ふるさと納税限度額
+      case 'f3': // 後方互換性
         return <FurusatoNozeiSimulator />
-      case 'w1': // 103万・130万の壁
+      case 'sim-wall-103-130': // 103万・130万の壁
+      case 'w1': // 後方互換性
+      case 'w3': // 後方互換性
         return <WageBarrierSimulator />
-      case 'n2': // NISA投資シミュレーター
+      case 'sim-nisa-investment': // NISA投資シミュレーター
+      case 'n2': // 後方互換性
+      case 'n3': // 後方互換性
         return <InvestmentSimulator />
+      case 'sim-medical-deduction': // 医療費控除
+      case 'm3': // 後方互換性
+        return <div className="text-center py-12 text-gray-600 dark:text-gray-400">医療費控除シミュレーター（準備中）</div>
+      case 'sim-housing-loan': // 住宅ローン控除
+        return <div className="text-center py-12 text-gray-600 dark:text-gray-400">住宅ローン控除シミュレーター（準備中）</div>
+      case 'sim-ideco-tax-benefit': // iDeCo節税効果
+        return <div className="text-center py-12 text-gray-600 dark:text-gray-400">iDeCo節税効果シミュレーター（準備中）</div>
       default:
         return (
           <div className="text-center py-12">
