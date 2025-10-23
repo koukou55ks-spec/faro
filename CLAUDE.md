@@ -23,7 +23,7 @@ apps/web/
 │ ├── (auth)/ # 認証 ✅
 │ ├── api/ # API一元化 ✅
 │ │ └── v1/ # バージョニング ✅
-│ │   └── chat/ # チャットAPI ✅
+│ │ └── chat/ # チャットAPI ✅
 │ ├── connect/ # アフィリエイト ✅
 │ ├── mypage/ # マイページ ✅
 │ ├── search/ # 検索 ✅
@@ -36,11 +36,11 @@ apps/web/
 │ │ ├── LoadingSkeleton.tsx ✅
 │ │ └── AffiliateLink.tsx ✅
 │ └── features/ # 機能別コンポーネント ✅
-│   ├── chat/ # チャット機能 ✅
-│   ├── notes/ # ノート機能 ✅
-│   ├── quiz/ # クイズ機能 ✅
-│   ├── simulator/ # シミュレーター ✅
-│   └── subscription/ # サブスク管理 ✅
+│ ├── chat/ # チャット機能 ✅
+│ ├── notes/ # ノート機能 ✅
+│ ├── quiz/ # クイズ機能 ✅
+│ ├── simulator/ # シミュレーター ✅
+│ └── subscription/ # サブスク管理 ✅
 │
 ├── lib/ # コアロジック ✅
 │ ├── ai/ # AI統合 ✅
@@ -109,9 +109,7 @@ AI: Gemini + Claude (¥8,000)
 📱 マルチプラットフォーム戦略
 現実的な展開順序
 graph LR
-A[1. Web App] -->|1週間| B[2. PWA]
-B -->|収益化後| C[3. React Native]
-C -->|必要なら| D[4. Desktop]
+A[1. Web App]
 API設計（最初から考慮）
 // app/api/v1/base.ts
 // どのクライアントからも使える設計
@@ -202,6 +200,7 @@ pnpm dev
 ### 3. 環境変数管理
 
 **ファイル構成:**
+
 ```
 .env.example         # ✅ Git管理（テンプレート、実際の値は書かない）
 .env.local           # ❌ Git除外（実際のAPIキーを記載）
@@ -209,6 +208,7 @@ apps/web/.env.local  # 使用禁止（混乱の元、ルートの.env.localの�
 ```
 
 **セットアップ手順:**
+
 ```bash
 # 1. 新しい開発者がクローンした時
 cp .env.example .env.local
@@ -222,6 +222,7 @@ cp .env.example .env.local
 ```
 
 **コード内での読み込み:**
+
 ```typescript
 // ❌ モジュールレベルで読み込まない
 const key = process.env.GEMINI_API_KEY
@@ -234,9 +235,10 @@ export async function POST(req: Request) {
 ```
 
 **Vercel環境変数:**
+
 - Vercel Dashboard → Settings → Environment Variables
-- Production環境: 本番キー（sk_live_等）
-- Preview環境: テストキー（sk_test_等）
+- Production環境: 本番キー（sk*live*等）
+- Preview環境: テストキー（sk*test*等）
 - SUPABASE_SERVICE_KEYはProductionのみ表示
 
 ---
@@ -248,6 +250,7 @@ export async function POST(req: Request) {
 - 新ファイル作成より既存修正を優先
 - 相対パスでインポート（`@/` エイリアスは使わない）
 - 必ず型を明示（`any` 禁止）
+- **コンポーネント配置ルール**: [components/README.md](apps/web/components/README.md) 参照
 
 ### エラーハンドリング
 
@@ -258,9 +261,16 @@ try {
   if (!response.ok) throw new Error('Failed')
 } catch (error) {
   console.error('[Component] Error:', error)
+  logger.error('API call failed', { error }) // Sentry連携
   // ユーザーにエラー表示
 }
 ```
+
+### テスト
+
+- **テスト戦略**: [TESTING.md](./TESTING.md) 参照
+- ビジネスロジックは必ずテスト（カバレッジ > 60%）
+- 実行: `pnpm test`, `pnpm test:coverage`
 
 ---
 
@@ -275,19 +285,31 @@ try {
 
 ---
 
-## 🚀 デプロイ
+## 🚀 デプロイ・監視
 
-### Vercel環境変数
+### デプロイフロー
 
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_KEY=eyJ...
-GEMINI_API_KEY=AIza...
-NODE_ENV=production
+```
+Feature Branch → PR (Preview) → develop (Staging) → master (Production)
+                  ↓                ↓                  ↓
+              CI/CD Pass       E2E Test         Smoke Test
 ```
 
-詳細は [DEPLOY.md](./DEPLOY.md) 参照。
+詳細: [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+### 監視・ログ
+
+- **Stage 1 (MVP)**: Vercel Analytics ✅
+- **Stage 2 (Growth)**: Sentry + Axiom + Rate Limiting
+- **AIQ品質管理**: [AI_QUALITY.md](./AI_QUALITY.md)
+
+詳細: [MONITORING.md](./MONITORING.md)
+
+### セキュリティ
+
+- **CSP / CORS / Rate Limiting**: [middleware.ts](apps/web/middleware.ts) で実装済み ✅
+- **画像最適化**: Next.js Image + CDN ✅
+- **バンドルサイズ**: Webpack code splitting ✅ ([next.config.js:69-115](apps/web/next.config.js#L69-L115))
 
 ---
 
