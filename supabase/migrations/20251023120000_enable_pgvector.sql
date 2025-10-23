@@ -13,7 +13,7 @@ RETURNS TABLE (
   user_id uuid,
   content text,
   content_type text,
-  source_id text,
+  source_id uuid,
   metadata jsonb,
   similarity float,
   created_at timestamptz
