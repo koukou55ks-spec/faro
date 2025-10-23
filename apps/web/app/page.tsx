@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../lib/hooks/useAuth'
 import { useSubscription } from '../lib/hooks/useSubscription'
 import {
-  MessageSquare, Search, User as UserIcon, Users, Sparkles,
+  MessageSquare, Search, User as UserIcon, Users,
   Menu, Plus, Moon, Sun, X, ChevronDown, Trash2
 } from 'lucide-react'
 import { ChatPanel } from '../src/features/chat/components/ChatPanel'
@@ -19,21 +19,19 @@ import dynamic from 'next/dynamic'
 
 // Import pages with dynamic loading for better performance
 const SearchPage = dynamic(() => import('./search/page').then(mod => mod.default), { ssr: false })
-const ToolsPage = dynamic(() => import('./tools/page').then(mod => mod.default), { ssr: false })
 const MyPage = dynamic(() => import('./mypage/page').then(mod => mod.default), { ssr: false })
 const ConnectPage = dynamic(() => import('./connect/page').then(mod => mod.default), { ssr: false })
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   label: string
-  id: 'home' | 'search' | 'tools' | 'mypage' | 'connect'
+  id: 'home' | 'search' | 'mypage' | 'connect'
   badge?: number
 }
 
 const navItems: NavItem[] = [
   { icon: MessageSquare, label: 'ホーム', id: 'home' },
   { icon: Search, label: 'ライブラリ', id: 'search' },
-  { icon: Sparkles, label: 'エージェント', id: 'tools' },
   { icon: UserIcon, label: 'マイページ', id: 'mypage' },
   { icon: Users, label: 'エキスパート', id: 'connect' }
 ]
@@ -51,25 +49,32 @@ export default function MainApp() {
     deleteConversation
   } = useChatStore()
 
-  const [activeTab, setActiveTab] = useState<'home' | 'search' | 'tools' | 'mypage' | 'connect'>('home')
+  const [activeTab, setActiveTab] = useState<'home' | 'search' | 'mypage' | 'connect'>('home')
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [isClient, setIsClient] = useState(false)
 
   const isGuest = !user
   const currentPlan = subscription?.plan || 'free'
 
+  // Client-side mounting
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   // Theme management
   useEffect(() => {
+    if (!isClient) return
     const savedTheme = localStorage.getItem('theme')
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark)
     setIsDarkMode(shouldBeDark)
     document.documentElement.classList.toggle('dark', shouldBeDark)
-  }, [])
+  }, [isClient])
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode
@@ -86,6 +91,8 @@ export default function MainApp() {
 
   // Responsive check
   useEffect(() => {
+    if (!isClient) return
+
     const handleResize = () => {
       const mobile = window.innerWidth < 1024
       setIsMobile(mobile)
@@ -99,7 +106,7 @@ export default function MainApp() {
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [isClient])
 
   // Get auth token
   useEffect(() => {
@@ -332,9 +339,6 @@ export default function MainApp() {
       case 'search':
         return <SearchPage />
 
-      case 'tools':
-        return <ToolsPage />
-
       case 'mypage':
         return (
           <div className="flex flex-col lg:flex-row h-full">
@@ -369,6 +373,15 @@ export default function MainApp() {
       default:
         return null
     }
+  }
+
+  // Prevent hydration mismatch by not rendering until client is ready
+  if (!isClient) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   return (
