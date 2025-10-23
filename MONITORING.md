@@ -10,8 +10,9 @@
 
 | Stage | ユーザー数 | 監視ツール | 月額コスト | 重点項目 |
 |-------|-----------|----------|----------|---------|
-| **MVP** | 0-1K | Vercel Analytics | ¥0 | パフォーマンス |
-| **Growth** | 1K-10K | Sentry + Axiom | ¥5,000 | エラー率、API遅延 |
+| **MVP** | 0-500 | Vercel Analytics + console.log | **¥0** | パフォーマンス |
+| **Early Growth** | 500-1K | 上記 + Sentry Free | **¥0** | エラー追跡 |
+| **Growth** | 1K-10K | Sentry Pro + Axiom + Upstash | **¥8,000** | 構造化ログ |
 | **Scale** | 10K+ | 上記 + Datadog | ¥30,000 | インフラ全体 |
 
 ---
