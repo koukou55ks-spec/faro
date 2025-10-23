@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-export const runtime = 'edge'
+// Edge Runtimeをコメントアウト（OpenTelemetryの互換性問題のため）
+// export const runtime = 'edge'
 
 const getSupabaseClient = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -12,7 +13,12 @@ const getSupabaseClient = () => {
     throw new Error('Supabase environment variables not configured')
   }
 
-  return createClient(url, key)
+  return createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  })
 }
 
 const getGeminiClient = () => {

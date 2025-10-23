@@ -18,7 +18,7 @@ import {
   Zap
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { AffiliateButton } from '../../src/components/AffiliateLink'
+import { AffiliateButton } from '../../components/ui/AffiliateLink'
 
 // 実際のアフィリエイトパートナー（会計ソフト）
 const accountingSoftware = [

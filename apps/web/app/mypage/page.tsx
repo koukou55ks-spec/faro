@@ -26,14 +26,36 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUserProfile } from '../../lib/hooks/useUserProfile'
 import { useAuth } from '../../lib/hooks/useAuth'
+import { useSubscription } from '../../lib/hooks/useSubscription'
 
 export default function MyPage() {
   const { user, loading: authLoading } = useAuth()
   const { profile, events, loading: profileLoading, error, createProfile, updateProfile } = useUserProfile()
+  const { subscription, usage, loading: subLoading } = useSubscription()
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false)
 
-  const loading = authLoading || profileLoading
+  const loading = authLoading || profileLoading || subLoading
+
+  // ログインしていない場合
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <User className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            ログインが必要です
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            マイページを表示するには、Googleアカウントでログインしてください。
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500">
+            左側のサイドバーから「Googleでログイン」ボタンをクリックしてください。
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   // 情報の完成度を計算
   const calculateCompleteness = () => {
@@ -208,6 +230,95 @@ export default function MyPage() {
       </div>
 
       <div className="px-4 -mt-4 space-y-4">
+        {/* サブスクリプション状況 */}
+        <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-indigo-500" />
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">プラン状況</h2>
+            </div>
+            {subscription?.plan === 'free' && (
+              <button
+                className="px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-600 text-white text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                onClick={() => alert('Pro版へのアップグレードは準備中です')}
+              >
+                Proにアップグレード
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600 dark:text-gray-400">現在のプラン</span>
+              <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
+                subscription?.plan === 'pro'
+                  ? 'bg-gradient-to-r from-purple-500 to-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+              }`}>
+                {subscription?.plan === 'pro' ? 'Pro' : 'Free'}
+              </span>
+            </div>
+
+            {/* AI利用状況 */}
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">AI相談利用</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {usage?.ai_messages_count || 0} / {subscription?.plan === 'pro' ? '1000' : '30'} 回
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                <motion.div
+                  className={`h-2 rounded-full ${
+                    ((usage?.ai_messages_count || 0) / (subscription?.plan === 'pro' ? 1000 : 30)) > 0.8
+                      ? 'bg-orange-500'
+                      : 'bg-gradient-to-r from-purple-500 to-blue-600'
+                  }`}
+                  initial={{ width: 0 }}
+                  animate={{
+                    width: `${Math.min(100, ((usage?.ai_messages_count || 0) / (subscription?.plan === 'pro' ? 1000 : 30)) * 100)}%`
+                  }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {subscription?.plan === 'free'
+                  ? 'Freeプラン: 月30回まで'
+                  : 'Proプラン: 月1000回まで'}
+              </p>
+            </div>
+
+            {/* ドキュメント管理状況 */}
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">ドキュメント</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {usage?.documents_count || 0} / {subscription?.plan === 'pro' ? '100' : '10'} 件
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                <motion.div
+                  className={`h-2 rounded-full ${
+                    ((usage?.documents_count || 0) / (subscription?.plan === 'pro' ? 100 : 10)) > 0.8
+                      ? 'bg-orange-500'
+                      : 'bg-gradient-to-r from-purple-500 to-blue-600'
+                  }`}
+                  initial={{ width: 0 }}
+                  animate={{
+                    width: `${Math.min(100, ((usage?.documents_count || 0) / (subscription?.plan === 'pro' ? 100 : 10)) * 100)}%`
+                  }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {subscription?.plan === 'free'
+                  ? 'Freeプラン: 最大10件'
+                  : 'Proプラン: 最大100件'}
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* AIによる分析・助言 */}
         {completeness >= 30 && (
           <motion.section

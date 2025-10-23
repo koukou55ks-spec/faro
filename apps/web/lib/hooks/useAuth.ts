@@ -10,6 +10,7 @@ export interface User {
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [token, setToken] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export function useAuth() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('[useAuth] Initial session check:', session?.user?.email || 'No user')
       setUser(session?.user ?? null)
+      setToken(session?.access_token ?? null)
       setLoading(false)
     })
 
@@ -26,6 +28,7 @@ export function useAuth() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[useAuth] Auth state changed:', event, session?.user?.email || 'No user')
       setUser(session?.user ?? null)
+      setToken(session?.access_token ?? null)
     })
 
     return () => subscription.unsubscribe()
@@ -58,7 +61,7 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/workspace`
+        redirectTo: `${window.location.origin}/auth/callback`
       }
     })
     if (error) throw error
@@ -68,6 +71,7 @@ export function useAuth() {
   return {
     user,
     loading,
+    token,
     signIn,
     signUp,
     signOut,
