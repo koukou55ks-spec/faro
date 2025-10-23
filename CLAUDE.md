@@ -299,11 +299,12 @@ Feature Branch → PR (Preview) → develop (Staging) → master (Production)
 
 ### 監視・ログ
 
-- **Stage 1 (MVP)**: Vercel Analytics ✅
-- **Stage 2 (Growth)**: Sentry + Axiom + Rate Limiting
-- **AIQ品質管理**: [AI_QUALITY.md](./AI_QUALITY.md)
+- **Stage 0 (0-500u)**: Vercel Analytics + console.log（¥0）✅ 今ここ
+- **Stage 1 (500u)**: 上記 + Sentry Free（¥0）
+- **Stage 2 (1000u+)**: Sentry Pro + Axiom + Upstash（¥8,000/月）
+- **AI品質管理**: [AI_QUALITY.md](./AI_QUALITY.md)
 
-詳細: [MONITORING.md](./MONITORING.md)
+詳細: [MONITORING.md](./MONITORING.md) | セットアップ: [MONITORING_SETUP.md](./MONITORING_SETUP.md)
 
 ### セキュリティ
 
