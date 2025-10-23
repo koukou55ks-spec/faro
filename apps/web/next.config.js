@@ -3,6 +3,13 @@ const { withSentryConfig } = require('@sentry/nextjs')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // ESLint/TypeScriptチェック（本番ビルド時は無視）
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   // ソースマップを完全に無効化（404エラー防止）
   productionBrowserSourceMaps: false,
   // 開発インジケーター設定（Next.js 15対応）

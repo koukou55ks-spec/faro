@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm --filter faro-frontend build",
-  "outputDirectory": "apps/web/.next",
   "installCommand": "pnpm install --no-frozen-lockfile"
 }
