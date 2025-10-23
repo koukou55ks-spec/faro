@@ -138,6 +138,104 @@ export async function POST(request: NextRequest) {
       sourceSelection // Pass source selection from frontend
     );
 
+    // バックグラウンドで情報抽出とembedding生成を実行（非同期、エラーでもレスポンスはブロックしない）
+    (async () => {
+      try {
+        // 会話履歴を取得
+        const conversation = await conversationRepo.findById(effectiveConversationId);
+        if (!conversation || conversation.messages.length < 2) {
+          return; // メッセージが少なすぎる場合はスキップ
+        }
+
+        // 最新のやり取り（ユーザー質問+AI応答）を使用
+        const recentMessages = conversation.messages.slice(-4); // 直近2往復
+        const messages = recentMessages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+
+        // Supabaseクライアントを取得してトークンを生成（バックグラウンド処理用）
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_KEY!
+        );
+
+        const { data: { user: dbUser } } = await supabase.auth.admin.getUserById(userId);
+        if (!dbUser) {
+          console.log('[Chat API] User not found for background extraction');
+          return;
+        }
+
+        // 情報抽出を直接実行（内部関数として）
+        const geminiForExtraction = new GeminiService(geminiApiKey!, false);
+
+        // 簡易版: ユーザーメッセージから関心事と不安を抽出
+        const userMessages = messages.filter(m => m.role === 'user').map(m => m.content).join('\n');
+
+        // 関心事を検出
+        const interests: string[] = [];
+        if (userMessages.includes('NISA') || userMessages.includes('ニーサ')) interests.push('NISA');
+        if (userMessages.includes('iDeCo') || userMessages.includes('イデコ') || userMessages.includes('確定拠出年金')) interests.push('iDeCo');
+        if (userMessages.includes('ふるさと納税')) interests.push('ふるさと納税');
+        if (userMessages.includes('住宅ローン') || userMessages.includes('住宅控除')) interests.push('住宅ローン控除');
+        if (userMessages.includes('医療費控除')) interests.push('医療費控除');
+        if (userMessages.includes('確定申告')) interests.push('確定申告');
+
+        // 不安・悩みを検出
+        const concerns: string[] = [];
+        if (userMessages.match(/税金|節税|税対策/)) concerns.push('税金対策');
+        if (userMessages.match(/年金|老後/)) concerns.push('年金不安');
+        if (userMessages.match(/医療費|病気|保険/)) concerns.push('医療費');
+        if (userMessages.match(/教育費|学費|子供/)) concerns.push('教育費');
+
+        // プロフィール更新
+        if (interests.length > 0 || concerns.length > 0) {
+          const { data: existingProfile } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+          if (existingProfile) {
+            await supabase
+              .from('user_profiles')
+              .update({
+                interests: Array.from(new Set([...(existingProfile.interests || []), ...interests])),
+                concerns: Array.from(new Set([...(existingProfile.concerns || []), ...concerns])),
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', userId);
+          } else {
+            await supabase
+              .from('user_profiles')
+              .insert({
+                user_id: userId,
+                interests,
+                concerns
+              });
+          }
+
+          console.log('[Chat API] Profile updated with interests:', interests, 'and concerns:', concerns);
+        }
+
+        // 質問履歴を保存
+        await supabase
+          .from('user_question_history')
+          .insert({
+            user_id: userId,
+            question: message,
+            keywords: [...interests, ...concerns],
+            detected_concerns: concerns
+          });
+
+        console.log('[Chat API] Background processing completed');
+
+      } catch (error) {
+        console.error('[Chat API] Background processing error (non-blocking):', error);
+      }
+    })();
+
     // Return in the format expected by the frontend
     return NextResponse.json({
       success: true,
