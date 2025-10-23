@@ -453,7 +453,8 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const lesson = GUIDE_LESSONS[moduleId] || []
+  const lesson = GUIDE_LESSONS[mappedId] || []
+// 新しいモジュールIDを古いIDにマッピング（後方互換性）  const idMap: Record<string, string> = {    "guide-furusato-why": "f2",    "guide-wall-why": "w2",    "guide-kakutei-shinkoku": "k1",    "guide-nisa-what": "n1"  }  const mappedId = idMap[moduleId] || moduleId
   const currentStep = lesson[currentStepIndex]
   const progress = ((currentStepIndex + 1) / lesson.length) * 100
   const isLastStep = currentStepIndex === lesson.length - 1

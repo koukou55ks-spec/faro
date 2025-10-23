@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { allModules, getPopularModules, getModulesByCategory, type ExperienceModule, type ModuleType } from '../../lib/modulesData'
 import { GuideChat } from '../../src/features/chat/components/GuideChat'
 import { SimulatorView } from '../../src/features/simulator/components/SimulatorView'
+import { QuizView } from '../../src/features/quiz/components/QuizView'
 
 // カテゴリー別セクション定義
 const sections = [
@@ -123,6 +124,7 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeGuide, setActiveGuide] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
   const [activeSimulator, setActiveSimulator] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
+  const [activeQuiz, setActiveQuiz] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
 
   const handleModuleClick = (module: ExperienceModule) => {
     if (module.type === 'guide') {
@@ -131,8 +133,11 @@ export default function SearchPage() {
     } else if (module.type === 'simulator') {
       // Open Simulator
       setActiveSimulator({ moduleId: module.id, moduleTitle: module.title })
+    } else if (module.type === 'quiz') {
+      // Open Quiz
+      setActiveQuiz({ moduleId: module.id, moduleTitle: module.title })
     } else {
-      // TODO: スキャン、クイズは次のステップで実装
+      // TODO: スキャンは次のステップで実装
       console.log('Module clicked:', module.id, module.type)
       alert(`${getModuleDisplay(module.type).label}を開始します（準備中）`)
     }
@@ -146,6 +151,10 @@ export default function SearchPage() {
     setActiveSimulator(null)
   }
 
+  const handleQuizBack = () => {
+    setActiveQuiz(null)
+  }
+
   // AIガイド表示
   if (activeGuide) {
     return <GuideChat moduleId={activeGuide.moduleId} moduleTitle={activeGuide.moduleTitle} onBack={handleGuideBack} />
@@ -154,6 +163,11 @@ export default function SearchPage() {
   // シミュレーター表示
   if (activeSimulator) {
     return <SimulatorView moduleId={activeSimulator.moduleId} moduleTitle={activeSimulator.moduleTitle} onBack={handleSimulatorBack} />
+  }
+
+  // クイズ表示
+  if (activeQuiz) {
+    return <QuizView moduleId={activeQuiz.moduleId} moduleTitle={activeQuiz.moduleTitle} onBack={handleQuizBack} />
   }
 
   // メイン画面（モジュール一覧）
