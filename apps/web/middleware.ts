@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 // Check if Redis is configured
 const REDIS_ENABLED =
@@ -114,7 +115,27 @@ export async function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 404 })
   }
 
+  // Supabase authentication - refresh session
   const response = NextResponse.next()
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+        },
+      },
+    }
+  )
+
+  // Refresh session if expired - required for Server Components
+  await supabase.auth.getSession()
 
   // Apply security headers
   const securityHeaders = getSecurityHeaders()
@@ -148,4 +169,6 @@ export const config = {
      */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
+  // Node.js runtimeを使用してEdge Runtime警告を回避
+  runtime: 'nodejs',
 }

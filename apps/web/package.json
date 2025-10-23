@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
+    "pre-deploy": "pnpm type-check && pnpm lint && pnpm build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

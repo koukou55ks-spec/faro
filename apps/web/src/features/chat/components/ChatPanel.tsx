@@ -8,6 +8,7 @@ import { useAuthStore } from '../../../../lib/store/useAuthStore'
 
 interface ChatPanelProps {
   userId?: string
+  authToken?: string | null
 }
 
 // サジェスチョン
@@ -18,7 +19,7 @@ const SUGGESTIONS = [
   { text: '住宅ローン控除について', icon: '🏠' },
 ]
 
-export function ChatPanel({ userId }: ChatPanelProps) {
+export function ChatPanel({ userId, authToken }: ChatPanelProps) {
   const {
     getCurrentMessages,
     addMessage,
@@ -57,6 +58,21 @@ export function ChatPanel({ userId }: ChatPanelProps) {
 
     container.addEventListener('scroll', handleScroll)
     return () => container.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Cleanup on unmount - メモリリーク防止
+  useEffect(() => {
+    return () => {
+      // AbortController のクリーンアップ
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+      // タイマーのクリーンアップ（copiedMessageId）
+      setCopiedMessageId(null)
+      // ローディング状態のリセット
+      setLoading(false)
+    }
   }, [])
 
   // Auto-resize textarea
@@ -100,13 +116,17 @@ export function ChatPanel({ userId }: ChatPanelProps) {
     try {
       const requestBody: any = {
         message: userInput,
-        userId: userId || 'anonymous',
-        stream: true,
+        // conversationIdはサーバー側で自動生成されるため送信しない
       }
 
-      const response = await fetch('/api/chat', {
+      const headers: any = { 'Content-Type': 'application/json' }
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`
+      }
+
+      const response = await fetch('/api/v1/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(requestBody),
         signal: abortControllerRef.current.signal,
       })
@@ -173,10 +193,16 @@ export function ChatPanel({ userId }: ChatPanelProps) {
         const data = await response.json()
         const assistantMessage: Message = {
           role: 'assistant',
-          content: data.response || data.data?.assistantMessage?.content || 'No response',
+          content: data.message || data.response || data.data?.assistantMessage?.content || 'No response',
           timestamp: new Date().toISOString(),
         }
         addMessage(assistantMessage)
+
+        // Update conversation ID if returned
+        if (data.conversationId && data.conversationId !== useChatStore.getState().currentConversationId) {
+          // Update the current conversation ID if a new one was created
+          useChatStore.getState().setCurrentConversation(data.conversationId)
+        }
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
