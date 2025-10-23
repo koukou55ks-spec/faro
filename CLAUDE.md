@@ -67,7 +67,7 @@ apps/web/
 必須:
 Framework: Next.js 15.1.x # 安定版、Turbopack対応（49秒ビルド）
 Language: TypeScript 5.7.2 # 最新安定版
-Styling: Tailwind CSS + CSS Modules # shadcn/uiは部分的
+Styling: Tailwind CSS 100% # シンプル統一、shadcn/ui不使用
 Database: PostgreSQL (Supabase)
 ORM: Prisma # Drizzleは未成熟
 
@@ -199,17 +199,45 @@ pnpm dev
 「Enable JavaScript source maps」をオフにしてください。
 ```
 
-### 3. 環境変数
+### 3. 環境変数管理
 
+**ファイル構成:**
+```
+.env.example         # ✅ Git管理（テンプレート、実際の値は書かない）
+.env.local           # ❌ Git除外（実際のAPIキーを記載）
+apps/web/.env.local  # 使用禁止（混乱の元、ルートの.env.localのみ使用）
+```
+
+**セットアップ手順:**
+```bash
+# 1. 新しい開発者がクローンした時
+cp .env.example .env.local
+
+# 2. .env.localに実際のAPIキーを記入（各サービスから取得）
+# - Supabase: https://supabase.com/dashboard/project/_/settings/api
+# - Gemini: https://makersuite.google.com/app/apikey
+# - Stripe: https://dashboard.stripe.com/apikeys
+
+# 3. 絶対に .env.local をコミットしないこと（.gitignoreで保護済み）
+```
+
+**コード内での読み込み:**
 ```typescript
 // ❌ モジュールレベルで読み込まない
 const key = process.env.GEMINI_API_KEY
 
 // ✅ 関数内で読み込む
-export async function POST(req) {
+export async function POST(req: Request) {
   const key = process.env.GEMINI_API_KEY
+  if (!key) throw new Error('GEMINI_API_KEY is not set')
 }
 ```
+
+**Vercel環境変数:**
+- Vercel Dashboard → Settings → Environment Variables
+- Production環境: 本番キー（sk_live_等）
+- Preview環境: テストキー（sk_test_等）
+- SUPABASE_SERVICE_KEYはProductionのみ表示
 
 ---
 
