@@ -15,11 +15,6 @@
     "clean": "rm -rf .next .turbo node_modules"
   },
   "dependencies": {
-    "@faro/ai-agent": "workspace:*",
-    "@faro/core": "workspace:*",
-    "@faro/infrastructure": "workspace:*",
-    "@faro/shared": "workspace:*",
-    "@faro/ui": "workspace:*",
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { Search, Play, TrendingUp, Sparkles, MessageSquare, SlidersHorizontal, CheckCircle2, ChevronRight, Trophy, Briefcase, Calculator, Camera } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { allModules, getPopularModules, getModulesByCategory, type ExperienceModule, type ModuleType } from '../../lib/modulesData'
-import { GuideChat } from '../../src/features/chat/components/GuideChat'
-import { SimulatorView } from '../../src/features/simulator/components/SimulatorView'
-import { QuizView } from '../../src/features/quiz/components/QuizView'
+import { GuideChat } from '../../components/features/chat/components/GuideChat'
+import { SimulatorView } from '../../components/features/simulator/components/SimulatorView'
+import { QuizView } from '../../components/features/quiz/components/QuizView'
 
 // カテゴリー別セクション定義
 const sections = [

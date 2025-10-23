@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '../../../lib/supabase/server'
-import { GeminiService } from '@faro/infrastructure'
+import { getGeminiClient } from '../../../lib/ai/gemini'
 
 export const runtime = 'nodejs'
 
@@ -13,10 +13,10 @@ async function generateNoteEmbedding(title: string, content: string, tags: strin
       return null
     }
 
-    const geminiService = new GeminiService(apiKey)
+    const gemini = getGeminiClient()
     // Combine title, content, and tags for comprehensive embedding
     const textToEmbed = `${title}\n${content}\n${tags.join(', ')}`
-    const embedding = await geminiService.generateEmbedding(textToEmbed)
+    const embedding = await gemini.embed(textToEmbed)
     return embedding
   } catch (error) {
     console.error('[Notes API] Failed to generate embedding:', error)

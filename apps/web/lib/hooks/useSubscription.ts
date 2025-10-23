@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './useAuth'
+import { createBrowserClient } from '@supabase/ssr'
 
 interface Subscription {
   id: string
@@ -16,11 +17,27 @@ interface Subscription {
   updated_at: string
 }
 
+interface UsageLimit {
+  id: string
+  user_id: string
+  month: string
+  ai_messages_count: number
+  documents_count: number
+  created_at: string
+  updated_at: string
+}
+
 export function useSubscription() {
   const { user } = useAuth()
   const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [usage, setUsage] = useState<UsageLimit | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
     async function fetchSubscription() {
@@ -75,6 +92,30 @@ export function useSubscription() {
 
         const data = await response.json()
         setSubscription(data.subscription)
+
+        // Fetch usage for current month
+        const currentMonth = new Date().toISOString().substring(0, 7) // YYYY-MM
+        const { data: usageData, error: usageError } = await supabase
+          .from('usage_limits')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('month', currentMonth)
+          .single()
+
+        if (!usageError && usageData) {
+          setUsage(usageData)
+        } else {
+          // Create default usage if not exists
+          setUsage({
+            id: 'default',
+            user_id: user.id,
+            month: currentMonth,
+            ai_messages_count: 0,
+            documents_count: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        }
       } catch (err) {
         console.error('[useSubscription] Error:', err)
         setError(err instanceof Error ? err.message : 'Unknown error')
@@ -106,6 +147,7 @@ export function useSubscription() {
 
   return {
     subscription,
+    usage,
     loading,
     error,
     isPro,
