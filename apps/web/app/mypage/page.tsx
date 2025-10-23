@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   User,
   Users,
@@ -20,176 +20,115 @@ import {
   FileText,
   DollarSign,
   Calendar,
-  MapPin
+  MapPin,
+  Loader2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-
-// パーソナル情報のカテゴリ
-interface PersonalInfo {
-  // 基本情報
-  name: string
-  age: number
-  occupation: string
-  employmentType: 'employee' | 'freelance' | 'business_owner' | 'part_time' | 'other'
-  residence: string
-
-  // 家族構成
-  maritalStatus: 'single' | 'married' | 'divorced' | 'other'
-  spouse?: {
-    hasIncome: boolean
-    annualIncome?: number
-  }
-  dependents: {
-    children: number
-    childrenUnder16: number
-    parents: number
-    other: number
-  }
-
-  // 収入情報
-  annualIncome: number
-  incomeType: 'salary' | 'business' | 'multiple' | 'other'
-
-  // 利用中の制度・サービス
-  activeServices: string[]
-
-  // 保険
-  insurances: {
-    lifeInsurance: boolean
-    medicalInsurance: boolean
-    earthquakeInsurance: boolean
-    pension: boolean
-  }
-
-  // 投資・資産運用
-  investments: {
-    nisa: boolean
-    iDeCo: boolean
-    stocks: boolean
-    realEstate: boolean
-    other: string[]
-  }
-
-  // ライフイベント予定
-  upcomingEvents: Array<{
-    event: string
-    year: number
-  }>
-}
-
-const initialPersonalInfo: PersonalInfo = {
-  name: 'ゲストユーザー',
-  age: 30,
-  occupation: '',
-  employmentType: 'employee',
-  residence: '',
-  maritalStatus: 'single',
-  dependents: {
-    children: 0,
-    childrenUnder16: 0,
-    parents: 0,
-    other: 0
-  },
-  annualIncome: 0,
-  incomeType: 'salary',
-  activeServices: [],
-  insurances: {
-    lifeInsurance: false,
-    medicalInsurance: false,
-    earthquakeInsurance: false,
-    pension: false
-  },
-  investments: {
-    nisa: false,
-    iDeCo: false,
-    stocks: false,
-    realEstate: false,
-    other: []
-  },
-  upcomingEvents: []
-}
+import { useUserProfile } from '../../lib/hooks/useUserProfile'
+import { useAuth } from '../../lib/hooks/useAuth'
 
 export default function MyPage() {
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(initialPersonalInfo)
+  const { user, loading: authLoading } = useAuth()
+  const { profile, events, loading: profileLoading, error, createProfile, updateProfile } = useUserProfile()
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false)
 
+  const loading = authLoading || profileLoading
+
   // 情報の完成度を計算
   const calculateCompleteness = () => {
+    if (!profile) return 0
+
     let total = 0
     let filled = 0
 
     // 基本情報 (5項目)
     total += 5
-    if (personalInfo.name !== 'ゲストユーザー') filled++
-    if (personalInfo.age > 0) filled++
-    if (personalInfo.occupation) filled++
-    if (personalInfo.employmentType) filled++
-    if (personalInfo.residence) filled++
+    if (profile.age) filled++
+    if (profile.occupation) filled++
+    if (profile.employment_type) filled++
+    if (profile.prefecture) filled++
+    if (profile.industry) filled++
 
     // 家族構成 (2項目)
     total += 2
-    if (personalInfo.maritalStatus) filled++
-    if (personalInfo.dependents.children >= 0) filled++
+    if (profile.marital_status) filled++
+    if (profile.num_children !== undefined) filled++
 
     // 収入情報 (2項目)
     total += 2
-    if (personalInfo.annualIncome > 0) filled++
-    if (personalInfo.incomeType) filled++
+    if (profile.annual_income) filled++
+    if (profile.household_income) filled++
 
-    // 制度・サービス (1項目)
-    total += 1
-    if (personalInfo.activeServices.length > 0) filled++
+    // 関心事・目標 (3項目)
+    total += 3
+    if (profile.interests && profile.interests.length > 0) filled++
+    if (profile.life_goals && profile.life_goals.length > 0) filled++
+    if (profile.concerns && profile.concerns.length > 0) filled++
 
-    // 保険 (1項目)
-    total += 1
-    const hasInsurance = Object.values(personalInfo.insurances).some(v => v)
-    if (hasInsurance) filled++
+    // 金融状況 (3項目)
+    total += 3
+    if (profile.has_mortgage !== undefined && profile.has_mortgage !== null) filled++
+    if (profile.has_savings !== undefined && profile.has_savings !== null) filled++
+    if (profile.has_investments !== undefined && profile.has_investments !== null) filled++
 
-    // 投資 (1項目)
-    total += 1
-    const hasInvestment = personalInfo.investments.nisa || personalInfo.investments.iDeCo || personalInfo.investments.stocks
-    if (hasInvestment) filled++
-
-    return Math.round((filled / total) * 100)
+    return total > 0 ? Math.round((filled / total) * 100) : 0
   }
 
   const completeness = calculateCompleteness()
 
   // AIによる分析・助言を生成（実際はAPI呼び出し）
   const generateAIAdvice = () => {
+    if (!profile) return []
+
     const advice = []
 
     // 年収ベースの助言
-    if (personalInfo.annualIncome > 0) {
-      if (personalInfo.annualIncome >= 20000000) {
+    if (profile.annual_income) {
+      if (profile.annual_income >= 20000000) {
         advice.push('高所得者向けの節税策（法人化、不動産投資）を検討しましょう')
-      } else if (personalInfo.annualIncome >= 10000000) {
-        advice.push('ふるさと納税の限度額は約' + Math.floor(personalInfo.annualIncome * 0.023) + '円です')
+      } else if (profile.annual_income >= 10000000) {
+        advice.push('ふるさと納税の限度額は約' + Math.floor(profile.annual_income * 0.023).toLocaleString() + '円です')
+      } else if (profile.annual_income >= 3000000) {
+        advice.push('ふるさと納税の限度額は約' + Math.floor(profile.annual_income * 0.020).toLocaleString() + '円です')
       }
     }
 
     // 家族構成ベースの助言
-    if (personalInfo.maritalStatus === 'married' && personalInfo.spouse?.hasIncome === false) {
-      advice.push('配偶者控除（38万円）を忘れずに申告しましょう')
+    if (profile.marital_status === 'married') {
+      advice.push('配偶者控除や配偶者特別控除が利用できる可能性があります')
     }
 
-    if (personalInfo.dependents.children > 0) {
-      advice.push('扶養控除で' + (personalInfo.dependents.children * 380000) + '円の控除が受けられます')
+    if (profile.num_children && profile.num_children > 0) {
+      advice.push('扶養控除で最大' + (profile.num_children * 380000).toLocaleString() + '円の控除が受けられます')
     }
 
-    // 投資ベースの助言
-    if (!personalInfo.investments.nisa && personalInfo.annualIncome > 3000000) {
-      advice.push('NISAを活用すると年間最大360万円の非課税投資が可能です')
+    // 関心事ベースの助言
+    if (profile.interests) {
+      if (profile.interests.includes('NISA') && !profile.has_investments) {
+        advice.push('NISAを活用すると年間最大360万円の非課税投資が可能です')
+      }
+      if (profile.interests.includes('iDeCo') && profile.employment_type === 'full_time') {
+        advice.push('iDeCoで掛金全額が所得控除になります（会社員は年間27.6万円まで）')
+      }
+      if (profile.interests.includes('住宅購入') && !profile.has_mortgage) {
+        advice.push('住宅ローン控除で最大400万円の控除が受けられます')
+      }
     }
 
-    if (!personalInfo.investments.iDeCo && personalInfo.employmentType === 'employee') {
-      advice.push('iDeCoで掛金全額が所得控除になります（年間27.6万円まで）')
+    // 投資状況ベースの助言
+    if (profile.has_investments && profile.annual_income && profile.annual_income > 5000000) {
+      advice.push('投資収益の確定申告を忘れずに。損益通算で税負担を軽減できます')
     }
 
-    // 保険ベースの助言
-    if (personalInfo.insurances.lifeInsurance || personalInfo.insurances.medicalInsurance) {
-      advice.push('生命保険料控除で最大12万円の控除を受けられます')
+    // 不安・関心事への対応
+    if (profile.concerns) {
+      if (profile.concerns.includes('税金対策')) {
+        advice.push('節税の基本は控除の最大活用です。医療費控除、生命保険料控除なども確認しましょう')
+      }
+      if (profile.concerns.includes('年金不安')) {
+        advice.push('公的年金だけでなく、iDeCoやNISAで私的年金を準備することを検討しましょう')
+      }
     }
 
     if (advice.length === 0) {
@@ -200,6 +139,30 @@ export default function MyPage() {
   }
 
   const aiAdvice = generateAIAdvice()
+
+  // ローディング表示
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">プロフィールを読み込み中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // エラー表示
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 dark:text-red-400 mb-4">エラーが発生しました</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black pb-20">
@@ -212,10 +175,10 @@ export default function MyPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">
-                {personalInfo.name}
+                {user?.email || 'ゲストユーザー'}
               </h1>
               <p className="text-white/80 text-sm">
-                {personalInfo.occupation || '職業未設定'}
+                {profile?.occupation || '職業未設定'}
               </p>
             </div>
           </div>
@@ -289,20 +252,22 @@ export default function MyPage() {
           </div>
 
           <div className="space-y-3">
-            <InfoRow icon={User} label="名前" value={personalInfo.name} />
-            <InfoRow icon={Calendar} label="年齢" value={personalInfo.age > 0 ? `${personalInfo.age}歳` : '未設定'} />
-            <InfoRow icon={Briefcase} label="職業" value={personalInfo.occupation || '未設定'} />
+            <InfoRow icon={Calendar} label="年齢" value={profile?.age ? `${profile.age}歳` : '未設定'} />
+            <InfoRow icon={Briefcase} label="職業" value={profile?.occupation || '未設定'} />
+            <InfoRow icon={Building2} label="業種" value={profile?.industry || '未設定'} />
             <InfoRow
               icon={Building2}
               label="雇用形態"
               value={
-                personalInfo.employmentType === 'employee' ? '会社員' :
-                personalInfo.employmentType === 'freelance' ? 'フリーランス' :
-                personalInfo.employmentType === 'business_owner' ? '事業主' :
-                personalInfo.employmentType === 'part_time' ? 'パート・アルバイト' : 'その他'
+                profile?.employment_type === 'full_time' ? '正社員' :
+                profile?.employment_type === 'part_time' ? 'パート・アルバイト' :
+                profile?.employment_type === 'freelance' ? 'フリーランス' :
+                profile?.employment_type === 'self_employed' ? '自営業' :
+                profile?.employment_type === 'student' ? '学生' :
+                profile?.employment_type === 'retired' ? '退職' : '未設定'
               }
             />
-            <InfoRow icon={MapPin} label="居住地" value={personalInfo.residence || '未設定'} />
+            <InfoRow icon={MapPin} label="居住地" value={profile?.prefecture ? `${profile.prefecture}${profile.city ? ' ' + profile.city : ''}` : '未設定'} />
           </div>
         </section>
 
@@ -326,23 +291,14 @@ export default function MyPage() {
               icon={Heart}
               label="婚姻状況"
               value={
-                personalInfo.maritalStatus === 'single' ? '独身' :
-                personalInfo.maritalStatus === 'married' ? '既婚' :
-                personalInfo.maritalStatus === 'divorced' ? '離婚' : 'その他'
+                profile?.marital_status === 'single' ? '独身' :
+                profile?.marital_status === 'married' ? '既婚' :
+                profile?.marital_status === 'divorced' ? '離婚' :
+                profile?.marital_status === 'widowed' ? '死別' : '未設定'
               }
             />
-            {personalInfo.maritalStatus === 'married' && (
-              <InfoRow
-                icon={User}
-                label="配偶者の収入"
-                value={personalInfo.spouse?.hasIncome ? `年間${(personalInfo.spouse.annualIncome || 0).toLocaleString()}円` : '収入なし'}
-              />
-            )}
-            <InfoRow icon={GraduationCap} label="子供" value={`${personalInfo.dependents.children}人`} />
-            {personalInfo.dependents.children > 0 && (
-              <InfoRow icon={GraduationCap} label="16歳未満の子供" value={`${personalInfo.dependents.childrenUnder16}人`} />
-            )}
-            <InfoRow icon={Home} label="扶養中の親" value={`${personalInfo.dependents.parents}人`} />
+            <InfoRow icon={GraduationCap} label="子供" value={profile?.num_children ? `${profile.num_children}人` : '0人'} />
+            <InfoRow icon={Users} label="扶養家族" value={profile?.num_dependents ? `${profile.num_dependents}人` : '0人'} />
           </div>
         </section>
 
@@ -365,16 +321,23 @@ export default function MyPage() {
             <InfoRow
               icon={TrendingUp}
               label="年収"
-              value={personalInfo.annualIncome > 0 ? `${personalInfo.annualIncome.toLocaleString()}円` : '未設定'}
-              highlight={personalInfo.annualIncome > 0}
+              value={profile?.annual_income ? `${profile.annual_income.toLocaleString()}円` : '未設定'}
+              highlight={!!profile?.annual_income}
             />
             <InfoRow
-              icon={FileText}
-              label="収入タイプ"
+              icon={TrendingUp}
+              label="世帯年収"
+              value={profile?.household_income ? `${profile.household_income.toLocaleString()}円` : '未設定'}
+              highlight={!!profile?.household_income}
+            />
+            <InfoRow
+              icon={Home}
+              label="住居"
               value={
-                personalInfo.incomeType === 'salary' ? '給与所得' :
-                personalInfo.incomeType === 'business' ? '事業所得' :
-                personalInfo.incomeType === 'multiple' ? '複数の収入源' : 'その他'
+                profile?.residence_type === 'owned' ? '持ち家' :
+                profile?.residence_type === 'rented' ? '賃貸' :
+                profile?.residence_type === 'family_owned' ? '家族所有' :
+                profile?.residence_type === 'company_housing' ? '社宅' : '未設定'
               }
             />
           </div>
@@ -393,44 +356,54 @@ export default function MyPage() {
           </div>
 
           <div className="space-y-2">
-            {/* 保険 */}
+            {/* 金融状況 */}
             <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">保険</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">金融状況</p>
               <div className="flex flex-wrap gap-2">
-                {personalInfo.insurances.lifeInsurance && <Tag label="生命保険" color="blue" />}
-                {personalInfo.insurances.medicalInsurance && <Tag label="医療保険" color="green" />}
-                {personalInfo.insurances.earthquakeInsurance && <Tag label="地震保険" color="red" />}
-                {personalInfo.insurances.pension && <Tag label="年金" color="purple" />}
-                {!Object.values(personalInfo.insurances).some(v => v) && (
+                {profile?.has_mortgage && <Tag label="住宅ローン" color="orange" />}
+                {profile?.has_savings && <Tag label="貯蓄あり" color="green" />}
+                {profile?.has_investments && <Tag label="投資運用中" color="blue" />}
+                {!profile?.has_mortgage && !profile?.has_savings && !profile?.has_investments && (
                   <p className="text-xs text-gray-400">未設定</p>
                 )}
               </div>
             </div>
 
-            {/* 投資・資産運用 */}
+            {/* 関心事 */}
             <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">投資・資産運用</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">関心のあること</p>
               <div className="flex flex-wrap gap-2">
-                {personalInfo.investments.nisa && <Tag label="NISA" color="purple" />}
-                {personalInfo.investments.iDeCo && <Tag label="iDeCo" color="indigo" />}
-                {personalInfo.investments.stocks && <Tag label="株式投資" color="blue" />}
-                {personalInfo.investments.realEstate && <Tag label="不動産投資" color="orange" />}
-                {personalInfo.investments.other.map((item, idx) => (
-                  <Tag key={idx} label={item} color="gray" />
-                ))}
-                {!personalInfo.investments.nisa && !personalInfo.investments.iDeCo && !personalInfo.investments.stocks && !personalInfo.investments.realEstate && (
+                {profile?.interests && profile.interests.length > 0 ? (
+                  profile.interests.map((interest, idx) => (
+                    <Tag key={idx} label={interest} color="purple" />
+                  ))
+                ) : (
                   <p className="text-xs text-gray-400">未設定</p>
                 )}
               </div>
             </div>
 
-            {/* その他の制度 */}
-            {personalInfo.activeServices.length > 0 && (
+            {/* 人生の目標 */}
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">人生の目標</p>
+              <div className="flex flex-wrap gap-2">
+                {profile?.life_goals && profile.life_goals.length > 0 ? (
+                  profile.life_goals.map((goal, idx) => (
+                    <Tag key={idx} label={goal} color="indigo" />
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400">未設定</p>
+                )}
+              </div>
+            </div>
+
+            {/* 不安・悩み */}
+            {profile?.concerns && profile.concerns.length > 0 && (
               <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">その他</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">不安・悩み</p>
                 <div className="flex flex-wrap gap-2">
-                  {personalInfo.activeServices.map((service, idx) => (
-                    <Tag key={idx} label={service} color="green" />
+                  {profile.concerns.map((concern, idx) => (
+                    <Tag key={idx} label={concern} color="red" />
                   ))}
                 </div>
               </div>
@@ -450,19 +423,49 @@ export default function MyPage() {
             </button>
           </div>
 
-          {personalInfo.upcomingEvents.length > 0 ? (
+          {events && events.length > 0 ? (
             <div className="space-y-2">
-              {personalInfo.upcomingEvents.map((event, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                  <span className="text-sm text-gray-900 dark:text-white">{event.event}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">{event.year}年</span>
-                </div>
-              ))}
+              {events.map((event) => {
+                const eventTypeMap: Record<string, string> = {
+                  birth: '誕生',
+                  marriage: '結婚',
+                  divorce: '離婚',
+                  child_birth: '出産',
+                  job_change: '転職',
+                  promotion: '昇進',
+                  retirement: '退職',
+                  house_purchase: '住宅購入',
+                  house_sale: '住宅売却',
+                  relocation: '転居',
+                  inheritance: '相続',
+                  business_start: '起業',
+                  business_close: '事業終了',
+                  illness: '病気',
+                  accident: '事故',
+                  other: 'その他'
+                }
+
+                return (
+                  <div key={event.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                    <div className="flex-1">
+                      <span className="text-sm text-gray-900 dark:text-white font-medium">
+                        {eventTypeMap[event.event_type] || event.event_type}
+                      </span>
+                      {event.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{event.description}</p>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {event.event_date ? new Date(event.event_date).getFullYear() : event.event_year}年
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <div className="text-center py-4">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                結婚、出産、住宅購入など、将来の予定を追加すると<br />
+                結婚、出産、住宅購入など、ライフイベントを追加すると<br />
                 より長期的な視点でアドバイスができます
               </p>
             </div>

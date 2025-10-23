@@ -149,10 +149,10 @@ export default function ConnectPage() {
       <div className="bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 text-white">
         <div className="p-6">
           <h1 className="text-3xl font-bold mb-2">
-            💼 つながる
+            👨‍💼 エキスパート
           </h1>
           <p className="text-purple-100">
-            あなたの金融ウェルビーイングを支えるサービス
+            あなたの金融ウェルビーイングを支える専門家とツール
           </p>
         </div>
 

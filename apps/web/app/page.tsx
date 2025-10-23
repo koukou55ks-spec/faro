@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
   { icon: Search, label: 'ライブラリ', id: 'search' },
   { icon: Sparkles, label: 'エージェント', id: 'tools' },
   { icon: UserIcon, label: 'マイページ', id: 'mypage' },
-  { icon: Users, label: 'つながる', id: 'connect' }
+  { icon: Users, label: 'エキスパート', id: 'connect' }
 ]
 
 export default function MainApp() {
