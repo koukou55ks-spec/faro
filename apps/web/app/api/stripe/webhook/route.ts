@@ -2,18 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-09-30.clover',
-})
+}) : null
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-)
+const getSupabaseClient = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_KEY
+
+  if (!url || !key) {
+    throw new Error('Supabase environment variables not configured')
+  }
+
+  return createClient(url, key)
+}
 
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
+  }
+
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')!
 
@@ -49,6 +59,7 @@ export async function POST(request: NextRequest) {
         )
 
         // Update subscription in database
+        const supabase = getSupabaseClient()
         await supabase.from('subscriptions').upsert({
           user_id: userId,
           stripe_customer_id: session.customer as string,
@@ -70,7 +81,8 @@ export async function POST(request: NextRequest) {
         const customerId = subscription.customer as string
 
         // Find user by customer ID
-        const { data: existingSubscription } = await supabase
+        const supabase2 = getSupabaseClient()
+        const { data: existingSubscription } = await supabase2
           .from('subscriptions')
           .select('user_id')
           .eq('stripe_customer_id', customerId)
@@ -82,7 +94,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update subscription status
-        await supabase
+        await supabase2
           .from('subscriptions')
           .update({
             stripe_subscription_id: subscription.id,
@@ -103,7 +115,8 @@ export async function POST(request: NextRequest) {
         const customerId = subscription.customer as string
 
         // Find user by customer ID
-        const { data: existingSubscription } = await supabase
+        const supabase3 = getSupabaseClient()
+        const { data: existingSubscription } = await supabase3
           .from('subscriptions')
           .select('user_id')
           .eq('stripe_customer_id', customerId)
@@ -115,7 +128,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update to free plan
-        await supabase
+        await supabase3
           .from('subscriptions')
           .update({
             status: 'canceled',
@@ -134,7 +147,8 @@ export async function POST(request: NextRequest) {
         const customerId = invoice.customer as string
 
         // Find user by customer ID
-        const { data: existingSubscription } = await supabase
+        const supabase4 = getSupabaseClient()
+        const { data: existingSubscription } = await supabase4
           .from('subscriptions')
           .select('user_id')
           .eq('stripe_customer_id', customerId)
@@ -146,7 +160,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update status to past_due
-        await supabase
+        await supabase4
           .from('subscriptions')
           .update({
             status: 'past_due',

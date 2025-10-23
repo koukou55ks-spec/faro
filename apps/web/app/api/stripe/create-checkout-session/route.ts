@@ -3,13 +3,17 @@ import Stripe from 'stripe'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-09-30.clover',
-})
+}) : null
 
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
+  }
+
   try {
     const supabase = createRouteHandlerClient({ cookies })
 

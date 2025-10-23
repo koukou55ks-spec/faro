@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
@@ -126,7 +128,7 @@ export default function PrivacyPolicy() {
         <div className="mt-12 text-sm text-gray-500">
           <p>最終更新日: 2025年10月8日</p>
           <p className="mt-2">
-            <a href="/" className="text-blue-600 underline">トップページに戻る</a>
+            <Link href="/" className="text-blue-600 underline">トップページに戻る</Link>
           </p>
         </div>
       </div>

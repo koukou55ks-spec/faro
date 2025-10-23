@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-)
+// Supabaseクライアントの遅延初期化（ビルド時のエラーを回避）
+const getSupabaseClient = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_KEY
+
+  if (!url || !key) {
+    throw new Error('Supabase environment variables not configured')
+  }
+
+  return createClient(url, key)
+}
 
 export const runtime = 'nodejs'
 
@@ -29,6 +36,7 @@ export async function POST(request: NextRequest) {
     const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
 
     // Get or create usage record
+    const supabase = getSupabaseClient()
     const { data: existing } = await supabase
       .from('usage_limits')
       .select('*')

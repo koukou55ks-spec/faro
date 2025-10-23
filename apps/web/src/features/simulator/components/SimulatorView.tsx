@@ -517,6 +517,460 @@ function InvestmentSimulator() {
   )
 }
 
+// 医療費控除シミュレーター
+function MedicalDeductionSimulator() {
+  const [medicalExpenses, setMedicalExpenses] = useState(150000)
+  const [income, setIncome] = useState(5000000)
+
+  const calculateRefund = () => {
+    // 所得の計算（簡易）
+    const taxableIncome = income - 1950000 // 給与所得控除を引く
+
+    // 医療費控除の基準額（10万円 or 所得の5%の高い方）
+    const threshold = Math.max(100000, taxableIncome * 0.05)
+
+    // 控除額
+    const deduction = Math.max(0, medicalExpenses - threshold)
+
+    // 税率（簡易計算: 所得税5%〜45%の累進課税）
+    let incomeTaxRate = 0.05
+    if (taxableIncome > 1950000) incomeTaxRate = 0.1
+    if (taxableIncome > 3300000) incomeTaxRate = 0.2
+    if (taxableIncome > 6950000) incomeTaxRate = 0.23
+    if (taxableIncome > 9000000) incomeTaxRate = 0.33
+
+    // 還付額（所得税 + 住民税10%）
+    const incomeTaxRefund = deduction * incomeTaxRate
+    const residentTaxRefund = deduction * 0.1
+    const totalRefund = incomeTaxRefund + residentTaxRefund
+
+    return {
+      deduction: Math.floor(deduction),
+      threshold: Math.floor(threshold),
+      incomeTaxRefund: Math.floor(incomeTaxRefund),
+      residentTaxRefund: Math.floor(residentTaxRefund),
+      totalRefund: Math.floor(totalRefund)
+    }
+  }
+
+  const result = calculateRefund()
+
+  return (
+    <div className="space-y-6">
+      {/* 説明 */}
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+          医療費控除で還付金を計算
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          年間の医療費と年収を入力して、確定申告で戻ってくる還付金を計算します。
+        </p>
+      </div>
+
+      {/* 入力エリア */}
+      <div className="space-y-4">
+        {/* 年間医療費 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            年間医療費（万円）
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min="0"
+              max="500000"
+              step="10000"
+              value={medicalExpenses}
+              onChange={(e) => setMedicalExpenses(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-green-600"
+            />
+            <div className="min-w-[120px] text-right">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                {(medicalExpenses / 10000).toFixed(0)}
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">万円</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 年収 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            年収（万円）
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min="2000000"
+              max="15000000"
+              step="100000"
+              value={income}
+              onChange={(e) => setIncome(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
+            />
+            <div className="min-w-[120px] text-right">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                {(income / 10000).toFixed(0)}
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">万円</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 基準額の表示 */}
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          医療費控除の基準額
+        </p>
+        <p className="text-lg font-bold text-gray-900 dark:text-white">
+          {result.threshold.toLocaleString()}円
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          10万円または所得の5%の高い方
+        </p>
+      </div>
+
+      {/* 結果表示 */}
+      <motion.div
+        key={result.totalRefund}
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-8 text-white shadow-2xl"
+      >
+        <div className="text-center space-y-4">
+          <p className="text-sm font-medium opacity-90">還付金の合計</p>
+          <div className="space-y-2">
+            <p className="text-5xl font-bold">
+              {result.totalRefund.toLocaleString()}
+              <span className="text-2xl ml-2">円</span>
+            </p>
+            <div className="text-sm opacity-80 space-y-1">
+              <p>所得税: {result.incomeTaxRefund.toLocaleString()}円</p>
+              <p>住民税: {result.residentTaxRefund.toLocaleString()}円</p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-white/20 text-sm space-y-2">
+            <p className="opacity-90">💡 控除額: {result.deduction.toLocaleString()}円</p>
+            <p className="opacity-90">確定申告で申請すれば、このお金が戻ってきます！</p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+// 住宅ローン控除シミュレーター
+function HousingLoanSimulator() {
+  const [loanAmount, setLoanAmount] = useState(30000000)
+  const [income, setIncome] = useState(5000000)
+
+  const calculateDeduction = () => {
+    // 控除率: 0.7%（2024年以降）
+    const deductionRate = 0.007
+
+    // 年間控除額（ローン残高の0.7%）
+    const annualDeduction = Math.min(loanAmount * deductionRate, 350000) // 上限35万円
+
+    // 所得税の計算（簡易）
+    const taxableIncome = income - 1950000
+    let incomeTax = 0
+    if (taxableIncome > 0) {
+      if (taxableIncome <= 1950000) incomeTax = taxableIncome * 0.05
+      else if (taxableIncome <= 3300000) incomeTax = 97500 + (taxableIncome - 1950000) * 0.1
+      else incomeTax = 232500 + (taxableIncome - 3300000) * 0.2
+    }
+
+    // 住民税（簡易: 所得の10%）
+    const residentTax = taxableIncome * 0.1
+
+    // 控除額の配分（所得税から優先、残りは住民税）
+    const fromIncomeTax = Math.min(annualDeduction, incomeTax)
+    const fromResidentTax = Math.min(annualDeduction - fromIncomeTax, 97500) // 住民税からは最大9.75万円
+
+    const actualDeduction = fromIncomeTax + fromResidentTax
+
+    // 13年間の合計
+    const total13Years = actualDeduction * 13
+
+    return {
+      annualDeduction: Math.floor(annualDeduction),
+      fromIncomeTax: Math.floor(fromIncomeTax),
+      fromResidentTax: Math.floor(fromResidentTax),
+      actualDeduction: Math.floor(actualDeduction),
+      total13Years: Math.floor(total13Years)
+    }
+  }
+
+  const result = calculateDeduction()
+
+  return (
+    <div className="space-y-6">
+      {/* 説明 */}
+      <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+          住宅ローン控除を計算
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          ローン残高と年収から、毎年戻ってくる税金を計算します（最大13年間）。
+        </p>
+      </div>
+
+      {/* 入力エリア */}
+      <div className="space-y-4">
+        {/* ローン残高 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            ローン残高（万円）
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min="10000000"
+              max="50000000"
+              step="1000000"
+              value={loanAmount}
+              onChange={(e) => setLoanAmount(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-red-600"
+            />
+            <div className="min-w-[120px] text-right">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                {(loanAmount / 10000).toFixed(0)}
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">万円</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 年収 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            年収（万円）
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min="3000000"
+              max="15000000"
+              step="100000"
+              value={income}
+              onChange={(e) => setIncome(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
+            />
+            <div className="min-w-[120px] text-right">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                {(income / 10000).toFixed(0)}
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">万円</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 年間控除額 */}
+      <motion.div
+        key={result.actualDeduction}
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl p-8 text-white shadow-2xl"
+      >
+        <div className="text-center space-y-4">
+          <p className="text-sm font-medium opacity-90">年間控除額（実際に戻る金額）</p>
+          <p className="text-5xl font-bold">
+            {result.actualDeduction.toLocaleString()}
+            <span className="text-2xl ml-2">円/年</span>
+          </p>
+          <div className="text-sm opacity-80 space-y-1">
+            <p>所得税から: {result.fromIncomeTax.toLocaleString()}円</p>
+            <p>住民税から: {result.fromResidentTax.toLocaleString()}円</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 13年間の合計 */}
+      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl p-6 text-center shadow-xl">
+        <p className="text-sm font-medium text-gray-900 mb-2">💰 13年間の合計控除額</p>
+        <p className="text-4xl font-bold text-gray-900">
+          {result.total13Years.toLocaleString()}
+          <span className="text-xl ml-2">円</span>
+        </p>
+      </div>
+
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+        <p className="font-medium mb-2">📌 注意事項</p>
+        <ul className="space-y-1 text-xs list-disc list-inside">
+          <li>控除率: 0.7%（2024年以降の新築住宅）</li>
+          <li>控除期間: 最大13年間</li>
+          <li>所得税で控除しきれない分は住民税から（上限9.75万円/年）</li>
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+// iDeCo節税効果シミュレーター
+function IdecoTaxBenefitSimulator() {
+  const [monthlyContribution, setMonthlyContribution] = useState(23000)
+  const [income, setIncome] = useState(5000000)
+
+  const calculateBenefit = () => {
+    const annualContribution = monthlyContribution * 12
+
+    // 所得の計算（簡易）
+    const taxableIncome = income - 1950000
+
+    // 税率（簡易計算）
+    let incomeTaxRate = 0.05
+    if (taxableIncome > 1950000) incomeTaxRate = 0.1
+    if (taxableIncome > 3300000) incomeTaxRate = 0.2
+    if (taxableIncome > 6950000) incomeTaxRate = 0.23
+    if (taxableIncome > 9000000) incomeTaxRate = 0.33
+
+    // 節税額
+    const incomeTaxSavings = annualContribution * incomeTaxRate
+    const residentTaxSavings = annualContribution * 0.1
+    const totalSavings = incomeTaxSavings + residentTaxSavings
+
+    // 30年間の合計
+    const total30Years = totalSavings * 30
+
+    // 運用益の非課税メリット（年利5%想定）
+    const futureValue = annualContribution * ((Math.pow(1.05, 30) - 1) / 0.05)
+    const profit = futureValue - (annualContribution * 30)
+    const taxOnProfit = profit * 0.20315 // 通常の投資なら20.315%課税
+    const totalBenefit = total30Years + taxOnProfit
+
+    return {
+      annualContribution: Math.floor(annualContribution),
+      incomeTaxSavings: Math.floor(incomeTaxSavings),
+      residentTaxSavings: Math.floor(residentTaxSavings),
+      totalSavings: Math.floor(totalSavings),
+      total30Years: Math.floor(total30Years),
+      taxOnProfit: Math.floor(taxOnProfit),
+      totalBenefit: Math.floor(totalBenefit)
+    }
+  }
+
+  const result = calculateBenefit()
+
+  return (
+    <div className="space-y-6">
+      {/* 説明 */}
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+          iDeCoで年間いくら節税できる？
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          掛金と年収から、今年戻ってくる税金と30年後の節税メリットを計算します。
+        </p>
+      </div>
+
+      {/* 入力エリア */}
+      <div className="space-y-4">
+        {/* 月額掛金 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            月額掛金
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min="5000"
+              max="68000"
+              step="1000"
+              value={monthlyContribution}
+              onChange={(e) => setMonthlyContribution(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
+            />
+            <div className="min-w-[120px] text-right">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                {(monthlyContribution / 10000).toFixed(1)}
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">万円</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            年間: {result.annualContribution.toLocaleString()}円
+          </p>
+        </div>
+
+        {/* 年収 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            年収（万円）
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min="3000000"
+              max="15000000"
+              step="100000"
+              value={income}
+              onChange={(e) => setIncome(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-purple-600"
+            />
+            <div className="min-w-[120px] text-right">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                {(income / 10000).toFixed(0)}
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">万円</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 年間節税額 */}
+      <motion.div
+        key={result.totalSavings}
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-2xl"
+      >
+        <div className="text-center space-y-4">
+          <p className="text-sm font-medium opacity-90">年間節税額</p>
+          <p className="text-5xl font-bold">
+            {result.totalSavings.toLocaleString()}
+            <span className="text-2xl ml-2">円/年</span>
+          </p>
+          <div className="text-sm opacity-80 space-y-1">
+            <p>所得税: {result.incomeTaxSavings.toLocaleString()}円</p>
+            <p>住民税: {result.residentTaxSavings.toLocaleString()}円</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 30年間の合計メリット */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-xl">
+          <p className="text-xs font-medium opacity-90 mb-2">30年間の節税額</p>
+          <p className="text-2xl font-bold">
+            {result.total30Years.toLocaleString()}円
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl">
+          <p className="text-xs font-medium opacity-90 mb-2">運用益の非課税メリット</p>
+          <p className="text-2xl font-bold">
+            {result.taxOnProfit.toLocaleString()}円
+          </p>
+        </div>
+      </div>
+
+      {/* 総合メリット */}
+      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl p-6 text-center shadow-2xl">
+        <p className="text-sm font-medium text-gray-900 mb-2">💰 iDeCoの総合メリット（30年間）</p>
+        <p className="text-4xl font-bold text-gray-900">
+          {result.totalBenefit.toLocaleString()}
+          <span className="text-xl ml-2">円</span>
+        </p>
+        <p className="text-xs text-gray-700 mt-2">節税 + 運用益非課税の合計</p>
+      </div>
+    </div>
+  )
+}
+
 export function SimulatorView({ moduleId, moduleTitle, onBack }: SimulatorViewProps) {
   const renderSimulator = () => {
     switch (moduleId) {
@@ -533,11 +987,11 @@ export function SimulatorView({ moduleId, moduleTitle, onBack }: SimulatorViewPr
         return <InvestmentSimulator />
       case 'sim-medical-deduction': // 医療費控除
       case 'm3': // 後方互換性
-        return <div className="text-center py-12 text-gray-600 dark:text-gray-400">医療費控除シミュレーター（準備中）</div>
+        return <MedicalDeductionSimulator />
       case 'sim-housing-loan': // 住宅ローン控除
-        return <div className="text-center py-12 text-gray-600 dark:text-gray-400">住宅ローン控除シミュレーター（準備中）</div>
+        return <HousingLoanSimulator />
       case 'sim-ideco-tax-benefit': // iDeCo節税効果
-        return <div className="text-center py-12 text-gray-600 dark:text-gray-400">iDeCo節税効果シミュレーター（準備中）</div>
+        return <IdecoTaxBenefitSimulator />
       default:
         return (
           <div className="text-center py-12">

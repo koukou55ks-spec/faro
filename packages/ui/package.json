@@ -5,7 +5,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'UI lint skipped'"
   },
   "dependencies": {
     "react": "^19.0.0",

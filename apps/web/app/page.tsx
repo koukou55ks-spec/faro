@@ -32,7 +32,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: MessageSquare, label: 'ホーム', id: 'home' },
-  { icon: Search, label: 'さがす', id: 'search' },
+  { icon: Search, label: 'ライブラリ', id: 'search' },
   { icon: Sparkles, label: 'エージェント', id: 'tools' },
   { icon: UserIcon, label: 'マイページ', id: 'mypage' },
   { icon: Users, label: 'つながる', id: 'connect' }
