@@ -302,8 +302,8 @@ export function QuizView({ moduleId, moduleTitle, onBack }: QuizViewProps) {
     const isPerfect = correctCount === totalQuestions
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-50 dark:from-gray-900 dark:to-black flex flex-col">
-        <div className="sticky top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 z-10">
+      <div className="h-screen bg-gradient-to-b from-green-50 to-emerald-50 dark:from-gray-900 dark:to-black flex flex-col overflow-hidden">
+        <div className="flex-shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 z-10 shadow-sm">
           <div className="max-w-3xl mx-auto px-4 py-4">
             <button
               onClick={onBack}
@@ -373,9 +373,9 @@ export function QuizView({ moduleId, moduleTitle, onBack }: QuizViewProps) {
 
   // クイズ画面
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex flex-col">
+    <div className="h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="sticky top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 z-10">
+      <div className="flex-shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 z-10 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-3">
             <button
@@ -414,7 +414,7 @@ export function QuizView({ moduleId, moduleTitle, onBack }: QuizViewProps) {
       </div>
 
       {/* Question */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="max-w-3xl mx-auto px-4 py-8">
           <AnimatePresence mode="wait">
             <motion.div
@@ -496,7 +496,7 @@ export function QuizView({ moduleId, moduleTitle, onBack }: QuizViewProps) {
       </div>
 
       {/* Bottom Button */}
-      <div className="sticky bottom-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800">
+      <div className="flex-shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 shadow-lg">
         <div className="max-w-3xl mx-auto px-4 py-4">
           {!showExplanation ? (
             <button

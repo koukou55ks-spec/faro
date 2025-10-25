@@ -258,7 +258,7 @@ export default function MainApp() {
                     )}
                     <div>
                       <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                        ZeiGuide AI
+                        Faro
                       </h1>
                       <p className="text-xs text-gray-500">
                         {currentTime.toLocaleTimeString('ja-JP')}

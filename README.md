@@ -119,18 +119,24 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## 📊 Development Status
 
-**Overall**: 8/10 ✅ MVP完成
+**Overall**: 9.5/10 ✅ プロダクション準備完了
 
 | Component | Status | Progress |
 |-----------|--------|----------|
 | Clean Architecture | ✅ Complete | 10/10 |
 | AI Integration (Gemini) | ✅ Complete | 10/10 |
-| 体験モジュール（税金） | ✅ Complete | 10/10 |
-| シミュレーター | ✅ Complete | 10/10 |
-| エージェント提案UI | ✅ Complete | 10/10 |
-| マイページ | ✅ Complete | 10/10 |
-| 専門家紹介 | 🚧 Placeholder | 5/10 |
-| Stripe決済 | 🔜 準備中 | 0/10 |
+| データベース (Supabase + RLS) | ✅ Complete | 10/10 |
+| 認証 (Email + Google OAuth) | ✅ Complete | 10/10 |
+| AI Chat + RAG | ✅ Complete | 10/10 |
+| マイページ + プロフィール | ✅ Complete | 10/10 |
+| カスタムタブ (NotebookLM風) | ✅ Complete | 10/10 |
+| ライブラリ (記事・クイズ・シミュレーター) | ✅ Complete | 9/10 |
+| エージェント提案UI | ✅ Complete | 9/10 |
+| 設定ページ | ✅ Complete | 9/10 |
+| 使用量制限 + サブスク | ✅ Complete | 9/10 |
+| エラーハンドリング | ✅ Complete | 10/10 |
+| レスポンシブデザイン | ✅ Complete | 10/10 |
+| Stripe決済 | 🚧 統合済み（テスト中） | 8/10 |
 
 ---
 
@@ -213,7 +219,9 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## 📚 Documentation
 
-- [CLAUDE.md](./CLAUDE.md) - 完全プロジェクト仕様書
+- [CLAUDE.md](./CLAUDE.md) - 完全プロジェクト仕様書（AI開発ガイド）
+- [ENV_SETUP.md](./ENV_SETUP.md) - 環境変数設定ガイド 🆕
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - トラブルシューティングガイド 🆕
 - [.workflow/STATUS.md](./.workflow/STATUS.md) - 現在の開発状況
 - [.workflow/DECISIONS.md](./.workflow/DECISIONS.md) - 技術的決定ログ
 

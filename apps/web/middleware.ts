@@ -115,12 +115,38 @@ export async function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 404 })
   }
 
+  // 公開ページ（認証不要）のリスト
+  const publicPaths = [
+    '/',
+    '/login',
+    '/signup',
+    '/auth/callback',
+    '/api/debug-env',
+    '/search',
+    '/agents',
+    '/connect',
+  ]
+
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
+
   // Supabase authentication - refresh session
   const response = NextResponse.next()
 
+  // 環境変数の確認
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('[Middleware] Supabase環境変数が設定されていません')
+    console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '設定済み' : '未設定')
+    console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '設定済み' : '未設定')
+    // 環境変数がない場合はセッション更新をスキップして続行
+    return response
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -135,7 +161,22 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session if expired - required for Server Components
-  await supabase.auth.getSession()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // 認証チェック: 公開ページ以外は認証必須
+  if (!isPublicPath && !session) {
+    console.log('[Middleware] Unauthorized access to:', pathname, '- redirecting to /login')
+    // 元のURLを保存して、ログイン後に戻れるようにする
+    const redirectUrl = new URL('/login', request.url)
+    redirectUrl.searchParams.set('returnUrl', pathname)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  // ログイン済みユーザーが認証ページにアクセスした場合はホームにリダイレクト
+  if (session && (pathname === '/login' || pathname === '/signup')) {
+    console.log('[Middleware] Authenticated user accessing auth page - redirecting to /')
+    return NextResponse.redirect(new URL('/', request.url))
+  }
 
   // Apply security headers
   const securityHeaders = getSecurityHeaders()

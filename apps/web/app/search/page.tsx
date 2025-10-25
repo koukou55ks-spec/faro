@@ -172,9 +172,9 @@ export default function SearchPage() {
 
   // メイン画面（モジュール一覧）
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
       {/* 検索バー（固定） */}
-      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-10">
+      <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-10">
         <div className="p-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -184,13 +184,15 @@ export default function SearchPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="モジュールを探す..."
               className="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+              aria-label="モジュール検索"
             />
           </div>
         </div>
       </div>
 
-      {/* メインコンテンツ */}
-      <div className="pt-4">
+      {/* メインコンテンツ - スクロール可能 */}
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-20" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="pt-4">
         {/* フィーチャードモジュール（大きめ） */}
         <section className="mb-8 px-4">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -212,6 +214,7 @@ export default function SearchPage() {
         {sections.map((section) => (
           <ScrollableSection key={section.id} section={section} onModuleClick={handleModuleClick} />
         ))}
+        </div>
       </div>
 
       {/* スタイル: 横スクロールのスクロールバーを非表示 */}

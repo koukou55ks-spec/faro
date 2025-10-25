@@ -452,6 +452,7 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   // 新しいモジュールIDを古いIDにマッピング（後方互換性）
   const idMap: Record<string, string> = {
@@ -476,7 +477,15 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
   }, [currentStepIndex])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // スクロールを一番上にリセット
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0
+    }
+    // 少し遅延させてからメッセージの最下部にスクロール
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }, 100)
+    return () => clearTimeout(timer)
   }, [currentStepIndex])
 
   const handleNext = () => {
@@ -491,16 +500,33 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
     setCurrentStepIndex(prev => Math.max(prev - 1, 0))
   }
 
+  // キーボードナビゲーション
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'Enter') {
+        handleNext()
+      } else if (e.key === 'ArrowLeft') {
+        handlePrevious()
+      } else if (e.key === 'Escape') {
+        onBack()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentStepIndex, isLastStep])
+
   if (lesson.length === 0) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center p-4">
+      <div className="h-screen bg-white dark:bg-gray-900 flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             このガイドは準備中です
           </p>
           <button
             onClick={onBack}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+            aria-label="戻る"
           >
             戻る
           </button>
@@ -510,20 +536,21 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex flex-col">
-      {/* Header */}
-      <div className="sticky top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
+    <div className="h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex flex-col overflow-hidden">
+      {/* Header - 固定 */}
+      <div className="flex-shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 z-10 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
             <button
               onClick={onBack}
-              className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-lg px-2 py-1 -ml-2"
+              aria-label="ライブラリに戻る"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="text-sm font-medium">戻る</span>
             </button>
             <div className="flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 text-purple-500" />
+              <Sparkles className="w-5 h-5 text-purple-500" aria-hidden="true" />
               <span className="text-sm font-semibold text-gray-900 dark:text-white">
                 AIガイド
               </span>
@@ -531,7 +558,7 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
           </div>
 
           {/* Title */}
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-3 line-clamp-2">
+          <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 line-clamp-2">
             {moduleTitle}
           </h1>
 
@@ -542,6 +569,11 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5, ease: 'easeInOut' }}
               className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`進捗 ${Math.round(progress)}%`}
             />
           </div>
           <div className="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -551,9 +583,13 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 py-6">
+      {/* Messages - スクロール可能な領域 */}
+      <div
+        ref={contentRef}
+        className="flex-1 overflow-y-auto overscroll-contain"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6 pb-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep?.id}
@@ -565,13 +601,13 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
             >
               {/* Faro Avatar + Message */}
               <div className="flex items-start gap-3 sm:gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 rounded-2xl bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 rounded-2xl bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-lg" aria-hidden="true">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="bg-white dark:bg-gray-800 rounded-3xl rounded-tl-md px-5 py-4 sm:px-6 sm:py-5 shadow-sm border border-gray-100 dark:border-gray-700">
+                  <div className="bg-white dark:bg-gray-800 rounded-3xl rounded-tl-md px-4 py-3 sm:px-6 sm:py-5 shadow-sm border border-gray-100 dark:border-gray-700">
                     {isTyping ? (
-                      <div className="flex gap-2 py-2">
+                      <div className="flex gap-2 py-2" aria-label="入力中">
                         <span className="typing-dot"></span>
                         <span className="typing-dot"></span>
                         <span className="typing-dot"></span>
@@ -587,19 +623,20 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
             </motion.div>
           </AnimatePresence>
 
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-4" />
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="sticky bottom-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+      {/* Bottom Navigation - 固定 */}
+      <div className="flex-shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 shadow-lg">
+        <div className="max-w-3xl mx-auto px-4 py-3 sm:py-4 safe-area-inset-bottom">
           <div className="flex items-center justify-between gap-3">
             {/* Previous Button */}
             <button
               onClick={handlePrevious}
               disabled={currentStepIndex === 0}
-              className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              aria-label="前のステップ"
             >
               前へ
             </button>
@@ -607,15 +644,23 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
             {/* Next Button */}
             <button
               onClick={handleNext}
-              className="flex-1 max-w-sm px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 active:scale-[0.98]"
+              className="flex-1 max-w-sm px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              aria-label={isLastStep ? '完了してライブラリに戻る' : '次のステップへ'}
             >
-              <span>{currentStep?.nextButtonText || (isLastStep ? '完了' : '次へ')}</span>
+              <span className="text-sm sm:text-base">{currentStep?.nextButtonText || (isLastStep ? '完了' : '次へ')}</span>
               {isLastStep ? (
-                <CheckCircle2 className="w-5 h-5" />
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
               ) : (
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
               )}
             </button>
+          </div>
+
+          {/* キーボードヒント */}
+          <div className="hidden sm:flex justify-center mt-2 text-xs text-gray-500 dark:text-gray-400 space-x-4">
+            <span>← 前へ</span>
+            <span>→ または Enter 次へ</span>
+            <span>Esc 戻る</span>
           </div>
         </div>
       </div>
@@ -644,6 +689,9 @@ export function GuideChat({ moduleId, moduleTitle, onBack }: GuideChatProps) {
             transform: translateY(-10px);
             opacity: 1;
           }
+        }
+        .safe-area-inset-bottom {
+          padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
         }
       `}</style>
     </div>

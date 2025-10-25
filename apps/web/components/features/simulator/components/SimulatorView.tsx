@@ -1010,9 +1010,9 @@ export function SimulatorView({ moduleId, moduleTitle, onBack }: SimulatorViewPr
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+    <div className="h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="sticky top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 z-10">
+      <div className="flex-shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 z-10 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-2">
             <button
@@ -1035,9 +1035,11 @@ export function SimulatorView({ moduleId, moduleTitle, onBack }: SimulatorViewPr
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        {renderSimulator()}
+      {/* Content - スクロール可能 */}
+      <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          {renderSimulator()}
+        </div>
       </div>
     </div>
   )

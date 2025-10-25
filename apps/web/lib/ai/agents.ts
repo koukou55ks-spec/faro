@@ -168,11 +168,101 @@ export class DocumentSummarizerAgent {
   }
 }
 
+/**
+ * パーソナライズドアドバイザーエージェント
+ * ユーザープロフィールに基づいて提案を生成
+ */
+export class PersonalizedAdvisorAgent {
+  private gemini = getGeminiClient()
+
+  async generateSuggestions(userProfile: any, lifeEvents: any[]): Promise<Array<{
+    type: string
+    title: string
+    message: string
+    action_url: string
+    priority: 'low' | 'medium' | 'high' | 'urgent'
+    confidence_score: number
+    reasoning: string
+    metadata?: any
+  }>> {
+    const systemPrompt = `あなたは日本の税務・資産運用のパーソナライズドアドバイザーです。
+ユーザーのプロフィール情報を分析し、最適な節税・資産運用の提案を生成してください。
+
+提案の形式:
+- type: 提案タイプ（tax_deadline, deduction_opportunity, investment_advice, life_event_reminder等）
+- title: 簡潔なタイトル（20文字以内）
+- message: 詳細なメッセージ（100文字程度）
+- action_url: 関連ページのURL
+- priority: 優先度（low, medium, high, urgent）
+- confidence_score: 確信度（0.0-1.0）
+- reasoning: 提案理由
+
+重要な観点:
+- 年収・家族構成に基づく控除機会
+- 今月・今期の税務期限
+- ライフイベントに関連する税制優遇
+- NISA・iDeCoなどの投資機会
+- 具体的な金額を含める`
+
+    const profileSummary = `
+【基本情報】
+- 年齢: ${userProfile?.age || '未設定'}歳
+- 職業: ${userProfile?.occupation || '未設定'}
+- 雇用形態: ${userProfile?.employment_type || '未設定'}
+- 年収: ${userProfile?.annual_income ? `${userProfile.annual_income.toLocaleString()}円` : '未設定'}
+- 世帯年収: ${userProfile?.household_income ? `${userProfile.household_income.toLocaleString()}円` : '未設定'}
+
+【家族構成】
+- 婚姻状況: ${userProfile?.marital_status || '未設定'}
+- 子供: ${userProfile?.num_children || 0}人
+- 扶養家族: ${userProfile?.num_dependents || 0}人
+
+【金融状況】
+- 住宅ローン: ${userProfile?.has_mortgage ? 'あり' : 'なし'}
+- 貯蓄: ${userProfile?.has_savings ? 'あり' : 'なし'}
+- 投資: ${userProfile?.has_investments ? 'あり' : 'なし'}
+
+【関心事】
+${userProfile?.interests?.join(', ') || 'なし'}
+
+【今後のライフイベント】
+${lifeEvents.map(e => `- ${e.event_type} (${e.event_date || e.event_year})`).join('\n') || 'なし'}
+`
+
+    const now = new Date()
+    const month = now.getMonth() + 1
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `現在: ${now.getFullYear()}年${month}月\n\n${profileSummary}\n\n上記のユーザーに対して、最も重要な提案を3-5個生成してください。JSON配列形式で返してください。` },
+    ]
+
+    const response = await this.gemini.chat(messages, {
+      temperature: 0.7,
+      maxTokens: 2000,
+    })
+
+    // JSONをパース
+    try {
+      const jsonMatch = response.match(/\[[\s\S]*\]/)
+      if (jsonMatch) {
+        const suggestions = JSON.parse(jsonMatch[0])
+        return suggestions
+      }
+    } catch (error) {
+      console.error('[PersonalizedAdvisorAgent] JSON parse error:', error)
+    }
+
+    return []
+  }
+}
+
 // エージェントファクトリー
 export class AgentFactory {
   private static taxAdvisor: TaxAdvisorAgent | null = null
   private static budgetAnalyst: BudgetAnalystAgent | null = null
   private static documentSummarizer: DocumentSummarizerAgent | null = null
+  private static personalizedAdvisor: PersonalizedAdvisorAgent | null = null
 
   static async getTaxAdvisor(): Promise<TaxAdvisorAgent> {
     if (!this.taxAdvisor) {
@@ -194,5 +284,12 @@ export class AgentFactory {
       this.documentSummarizer = new DocumentSummarizerAgent()
     }
     return this.documentSummarizer
+  }
+
+  static getPersonalizedAdvisor(): PersonalizedAdvisorAgent {
+    if (!this.personalizedAdvisor) {
+      this.personalizedAdvisor = new PersonalizedAdvisorAgent()
+    }
+    return this.personalizedAdvisor
   }
 }

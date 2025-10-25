@@ -18,13 +18,15 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "validate": "pnpm type-check && pnpm lint && pnpm test",
     "pre-deploy": "pnpm type-check && pnpm lint && pnpm build",
+    "db:push": "cd supabase && supabase db push --include-all",
+    "db:status": "cd supabase && supabase migration list",
     "tag:create": "node -e \"const v=require('./package.json').version;require('child_process').execSync(`git tag -a v${v} -m 'Release v${v}' && git push origin v${v}`,{stdio:'inherit'})\"",
     "tag:list": "git tag -l -n1"
   },
   "devDependencies": {
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.2"
   },
   "engines": {
     "node": ">=20.0.0",

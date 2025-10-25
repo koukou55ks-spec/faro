@@ -114,24 +114,51 @@ export function ChatPanel({ userId, authToken }: ChatPanelProps) {
     abortControllerRef.current = new AbortController()
 
     try {
+      // ゲストモードの場合は専用APIを使用
+      const apiEndpoint = isGuest ? '/api/v1/chat/guest' : '/api/v1/chat'
+
       const requestBody: any = {
         message: userInput,
-        // conversationIdはサーバー側で自動生成されるため送信しない
+      }
+
+      // ゲストモードの場合はguestIdと会話履歴を送信
+      if (isGuest) {
+        // ゲストIDをlocalStorageから取得または生成
+        let guestId = localStorage.getItem('guestId')
+        if (!guestId) {
+          guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          localStorage.setItem('guestId', guestId)
+        }
+        requestBody.guestId = guestId
+        // 直近の会話履歴を送信（コンテキスト用）
+        requestBody.conversationHistory = messages.slice(-6).map(m => ({
+          role: m.role,
+          content: m.content
+        }))
       }
 
       const headers: any = { 'Content-Type': 'application/json' }
-      if (authToken) {
+      if (!isGuest && authToken) {
         headers['Authorization'] = `Bearer ${authToken}`
       }
 
-      const response = await fetch('/api/v1/chat', {
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers,
         body: JSON.stringify(requestBody),
         signal: abortControllerRef.current.signal,
       })
 
-      if (!response.ok) throw new Error('API request failed')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+
+        // レート制限エラーの場合
+        if (response.status === 429) {
+          throw new Error(errorData.message || '利用制限に達しました。アカウント登録すると無制限にご利用いただけます。')
+        }
+
+        throw new Error(errorData.error || 'API request failed')
+      }
 
       if (response.headers.get('content-type')?.includes('text/event-stream')) {
         const reader = response.body?.getReader()

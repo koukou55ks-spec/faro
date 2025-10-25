@@ -19,17 +19,27 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can view their own subscription
-CREATE POLICY "Users can view own subscription"
-  ON public.subscriptions
-  FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'subscriptions' AND policyname = 'Users can view own subscription'
+  ) THEN
+    CREATE POLICY "Users can view own subscription"
+      ON public.subscriptions
+      FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
 
--- Policy: Users can update their own subscription (for Stripe webhooks)
-CREATE POLICY "Service can manage subscriptions"
-  ON public.subscriptions
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'subscriptions' AND policyname = 'Service can manage subscriptions'
+  ) THEN
+    CREATE POLICY "Service can manage subscriptions"
+      ON public.subscriptions
+      FOR ALL
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Create index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON public.subscriptions(user_id);
@@ -46,6 +56,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger
+DROP TRIGGER IF EXISTS set_subscriptions_updated_at ON public.subscriptions;
 CREATE TRIGGER set_subscriptions_updated_at
   BEFORE UPDATE ON public.subscriptions
   FOR EACH ROW
@@ -67,17 +78,27 @@ CREATE TABLE IF NOT EXISTS public.usage_limits (
 ALTER TABLE public.usage_limits ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can view their own usage
-CREATE POLICY "Users can view own usage"
-  ON public.usage_limits
-  FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'usage_limits' AND policyname = 'Users can view own usage'
+  ) THEN
+    CREATE POLICY "Users can view own usage"
+      ON public.usage_limits
+      FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
 
--- Policy: Service can manage usage
-CREATE POLICY "Service can manage usage"
-  ON public.usage_limits
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'usage_limits' AND policyname = 'Service can manage usage'
+  ) THEN
+    CREATE POLICY "Service can manage usage"
+      ON public.usage_limits
+      FOR ALL
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Create index
 CREATE INDEX IF NOT EXISTS idx_usage_limits_user_month ON public.usage_limits(user_id, month);

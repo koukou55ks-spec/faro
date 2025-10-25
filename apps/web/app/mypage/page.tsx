@@ -21,12 +21,15 @@ import {
   DollarSign,
   Calendar,
   MapPin,
-  Loader2
+  Loader2,
+  Settings
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUserProfile } from '../../lib/hooks/useUserProfile'
 import { useAuth } from '../../lib/hooks/useAuth'
 import { useSubscription } from '../../lib/hooks/useSubscription'
+import { CustomTabsSection } from '../../components/features/mypage/CustomTabsSection'
+import { ProfileEditModal } from '../../components/features/mypage/ProfileEditModal'
 
 export default function MyPage() {
   const { user, loading: authLoading } = useAuth()
@@ -34,8 +37,14 @@ export default function MyPage() {
   const { subscription, usage, loading: subLoading } = useSubscription()
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const loading = authLoading || profileLoading || subLoading
+
+  // デバッグ情報をコンソールに出力
+  useEffect(() => {
+    console.log('[MyPage] Auth state:', { user: user?.email, authLoading, profileLoading, subLoading })
+  }, [user, authLoading, profileLoading, subLoading])
 
   // ログインしていない場合
   if (!authLoading && !user) {
@@ -47,11 +56,22 @@ export default function MyPage() {
             ログインが必要です
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            マイページを表示するには、Googleアカウントでログインしてください。
+            マイページを表示するには、ログインしてください。
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-500">
-            左側のサイドバーから「Googleでログイン」ボタンをクリックしてください。
-          </p>
+          <div className="space-y-3">
+            <a
+              href="/login"
+              className="block w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
+            >
+              メールアドレスでログイン
+            </a>
+            <a
+              href="/signup"
+              className="block w-full px-6 py-3 bg-white hover:bg-gray-50 text-purple-600 border-2 border-purple-600 rounded-lg font-semibold transition-colors"
+            >
+              新規登録
+            </a>
+          </div>
         </div>
       </div>
     )
@@ -187,9 +207,9 @@ export default function MyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black pb-20">
+    <div className="h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 p-6 pb-8">
+      <div className="flex-shrink-0 bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 p-6 pb-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center border-2 border-white/30">
@@ -204,7 +224,12 @@ export default function MyPage() {
               </p>
             </div>
           </div>
-          <Sparkles className="w-6 h-6 text-white/80" />
+          <a
+            href="/settings"
+            className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center border border-white/30 hover:bg-white/30 transition-colors"
+          >
+            <Settings className="w-5 h-5 text-white" />
+          </a>
         </div>
 
         {/* 完成度インジケーター */}
@@ -229,7 +254,9 @@ export default function MyPage() {
         </div>
       </div>
 
-      <div className="px-4 -mt-4 space-y-4">
+      {/* メインコンテンツ - スクロール可能 */}
+      <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="px-4 -mt-4 space-y-4 pb-20">
         {/* サブスクリプション状況 */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
@@ -264,19 +291,19 @@ export default function MyPage() {
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">AI相談利用</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {usage?.ai_messages_count || 0} / {subscription?.plan === 'pro' ? '1000' : '30'} 回
+                  {usage?.chat_count || 0} / {subscription?.plan === 'pro' ? '1000' : '30'} 回
                 </span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                 <motion.div
                   className={`h-2 rounded-full ${
-                    ((usage?.ai_messages_count || 0) / (subscription?.plan === 'pro' ? 1000 : 30)) > 0.8
+                    ((usage?.chat_count || 0) / (subscription?.plan === 'pro' ? 1000 : 30)) > 0.8
                       ? 'bg-orange-500'
                       : 'bg-gradient-to-r from-purple-500 to-blue-600'
                   }`}
                   initial={{ width: 0 }}
                   animate={{
-                    width: `${Math.min(100, ((usage?.ai_messages_count || 0) / (subscription?.plan === 'pro' ? 1000 : 30)) * 100)}%`
+                    width: `${Math.min(100, ((usage?.chat_count || 0) / (subscription?.plan === 'pro' ? 1000 : 30)) * 100)}%`
                   }}
                   transition={{ duration: 0.8, ease: 'easeOut' }}
                 />
@@ -285,35 +312,6 @@ export default function MyPage() {
                 {subscription?.plan === 'free'
                   ? 'Freeプラン: 月30回まで'
                   : 'Proプラン: 月1000回まで'}
-              </p>
-            </div>
-
-            {/* ドキュメント管理状況 */}
-            <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">ドキュメント</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {usage?.documents_count || 0} / {subscription?.plan === 'pro' ? '100' : '10'} 件
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                <motion.div
-                  className={`h-2 rounded-full ${
-                    ((usage?.documents_count || 0) / (subscription?.plan === 'pro' ? 100 : 10)) > 0.8
-                      ? 'bg-orange-500'
-                      : 'bg-gradient-to-r from-purple-500 to-blue-600'
-                  }`}
-                  initial={{ width: 0 }}
-                  animate={{
-                    width: `${Math.min(100, ((usage?.documents_count || 0) / (subscription?.plan === 'pro' ? 100 : 10)) * 100)}%`
-                  }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
-                />
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {subscription?.plan === 'free'
-                  ? 'Freeプラン: 最大10件'
-                  : 'Proプラン: 最大100件'}
               </p>
             </div>
           </div>
@@ -356,7 +354,7 @@ export default function MyPage() {
             </div>
             <button
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              onClick={() => alert('編集機能は準備中です')}
+              onClick={() => setIsEditModalOpen(true)}
             >
               <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
@@ -391,7 +389,7 @@ export default function MyPage() {
             </div>
             <button
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              onClick={() => alert('編集機能は準備中です')}
+              onClick={() => setIsEditModalOpen(true)}
             >
               <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
@@ -422,7 +420,7 @@ export default function MyPage() {
             </div>
             <button
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              onClick={() => alert('編集機能は準備中です')}
+              onClick={() => setIsEditModalOpen(true)}
             >
               <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
@@ -583,6 +581,11 @@ export default function MyPage() {
           )}
         </section>
 
+        {/* カスタムタブセクション（NotebookLM風） */}
+        <section>
+          <CustomTabsSection />
+        </section>
+
         {/* 情報追加を促すCTA */}
         {completeness < 80 && (
           <motion.div
@@ -603,7 +606,16 @@ export default function MyPage() {
             </button>
           </motion.div>
         )}
+        </div>
       </div>
+
+      {/* Profile Edit Modal */}
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        profile={profile}
+        onSave={updateProfile}
+      />
     </div>
   )
 }

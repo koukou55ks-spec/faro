@@ -12,9 +12,17 @@ export async function GET(request: NextRequest) {
     try {
       const cookieStore = await cookies()
 
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('[Auth Callback] Supabase環境変数が設定されていません')
+        return NextResponse.redirect(`${requestUrl.origin}/?error=config_error`)
+      }
+
       const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
           cookies: {
             getAll() {

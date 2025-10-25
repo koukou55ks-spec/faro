@@ -75,47 +75,91 @@ ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
-CREATE POLICY "Users can view own profile"
-    ON public.profiles FOR SELECT
-    USING (auth.uid() = id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can view own profile'
+    ) THEN
+        CREATE POLICY "Users can view own profile"
+            ON public.profiles FOR SELECT
+            USING (auth.uid() = id);
+    END IF;
 
-CREATE POLICY "Users can update own profile"
-    ON public.profiles FOR UPDATE
-    USING (auth.uid() = id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can update own profile'
+    ) THEN
+        CREATE POLICY "Users can update own profile"
+            ON public.profiles FOR UPDATE
+            USING (auth.uid() = id);
+    END IF;
 
-CREATE POLICY "Users can view own conversations"
-    ON public.conversations FOR SELECT
-    USING (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'conversations' AND policyname = 'Users can view own conversations'
+    ) THEN
+        CREATE POLICY "Users can view own conversations"
+            ON public.conversations FOR SELECT
+            USING (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can create own conversations"
-    ON public.conversations FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'conversations' AND policyname = 'Users can create own conversations'
+    ) THEN
+        CREATE POLICY "Users can create own conversations"
+            ON public.conversations FOR INSERT
+            WITH CHECK (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can update own conversations"
-    ON public.conversations FOR UPDATE
-    USING (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'conversations' AND policyname = 'Users can update own conversations'
+    ) THEN
+        CREATE POLICY "Users can update own conversations"
+            ON public.conversations FOR UPDATE
+            USING (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can delete own conversations"
-    ON public.conversations FOR DELETE
-    USING (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'conversations' AND policyname = 'Users can delete own conversations'
+    ) THEN
+        CREATE POLICY "Users can delete own conversations"
+            ON public.conversations FOR DELETE
+            USING (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can view own messages"
-    ON public.messages FOR SELECT
-    USING (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'messages' AND policyname = 'Users can view own messages'
+    ) THEN
+        CREATE POLICY "Users can view own messages"
+            ON public.messages FOR SELECT
+            USING (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can create own messages"
-    ON public.messages FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'messages' AND policyname = 'Users can create own messages'
+    ) THEN
+        CREATE POLICY "Users can create own messages"
+            ON public.messages FOR INSERT
+            WITH CHECK (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can view own transactions"
-    ON public.transactions FOR ALL
-    USING (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'transactions' AND policyname = 'Users can view own transactions'
+    ) THEN
+        CREATE POLICY "Users can view own transactions"
+            ON public.transactions FOR ALL
+            USING (auth.uid() = user_id);
+    END IF;
 
-CREATE POLICY "Users can view own notes"
-    ON public.notes FOR ALL
-    USING (auth.uid() = user_id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'notes' AND policyname = 'Users can view own notes'
+    ) THEN
+        CREATE POLICY "Users can view own notes"
+            ON public.notes FOR ALL
+            USING (auth.uid() = user_id);
+    END IF;
+END $$;
 
 -- Functions
+DROP FUNCTION IF EXISTS public.match_messages(vector, float, int, uuid);
 CREATE OR REPLACE FUNCTION public.match_messages(
     query_embedding vector(768),
     match_threshold float,
@@ -151,21 +195,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS set_updated_at ON public.profiles;
 CREATE TRIGGER set_updated_at
     BEFORE UPDATE ON public.profiles
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS set_updated_at ON public.conversations;
 CREATE TRIGGER set_updated_at
     BEFORE UPDATE ON public.conversations
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS set_updated_at ON public.transactions;
 CREATE TRIGGER set_updated_at
     BEFORE UPDATE ON public.transactions
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS set_updated_at ON public.notes;
 CREATE TRIGGER set_updated_at
     BEFORE UPDATE ON public.notes
     FOR EACH ROW

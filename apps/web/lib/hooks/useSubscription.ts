@@ -21,8 +21,9 @@ interface UsageLimit {
   id: string
   user_id: string
   month: string
-  ai_messages_count: number
-  documents_count: number
+  chat_count: number
+  search_count: number
+  tool_usage_count: number
   created_at: string
   updated_at: string
 }
@@ -110,8 +111,9 @@ export function useSubscription() {
             id: 'default',
             user_id: user.id,
             month: currentMonth,
-            ai_messages_count: 0,
-            documents_count: 0,
+            chat_count: 0,
+            search_count: 0,
+            tool_usage_count: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })

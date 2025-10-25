@@ -7,9 +7,10 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- ベクトル検索関数
+DROP FUNCTION IF EXISTS vector_search(vector, uuid, int, float);
 CREATE OR REPLACE FUNCTION vector_search(
   query_embedding vector(768),
-  user_id uuid,
+  filter_user_id uuid,
   match_count int DEFAULT 5,
   match_threshold float DEFAULT 0.7
 )
@@ -31,7 +32,7 @@ AS $$
   FROM messages m
   JOIN conversations c ON m.conversation_id = c.id
   WHERE
-    c.user_id = user_id
+    c.user_id = filter_user_id
     AND m.embedding IS NOT NULL
     AND 1 - (m.embedding <=> query_embedding) > match_threshold
   ORDER BY m.embedding <=> query_embedding
@@ -39,6 +40,7 @@ AS $$
 $$;
 
 -- ユーザーコンテキスト検索（user_context_vectorsテーブル用）
+DROP FUNCTION IF EXISTS search_user_context(vector, uuid, int, float);
 CREATE OR REPLACE FUNCTION search_user_context(
   query_embedding vector(768),
   filter_user_id uuid,

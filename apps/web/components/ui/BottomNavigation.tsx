@@ -6,7 +6,7 @@ import {
   Search,
   Calculator,
   User,
-  Users
+  BookOpen
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -19,10 +19,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: MessageSquare, label: 'ホーム', path: '/' },
-  { icon: Search, label: 'さがす', path: '/search' },
+  { icon: BookOpen, label: 'ライブラリ', path: '/library' },
   { icon: Calculator, label: 'ツール', path: '/tools' },
-  { icon: User, label: 'マイページ', path: '/mypage' },
-  { icon: Users, label: 'つながる', path: '/connect' }
+  { icon: User, label: 'マイページ', path: '/mypage' }
 ]
 
 export function BottomNavigation() {

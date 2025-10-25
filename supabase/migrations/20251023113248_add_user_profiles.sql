@@ -131,33 +131,64 @@ ALTER TABLE user_question_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_context_vectors ENABLE ROW LEVEL SECURITY;
 
 -- RLSポリシー: ユーザーは自分のデータのみアクセス可能
-CREATE POLICY "Users can view their own profile"
-  ON user_profiles FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_profiles' AND policyname = 'Users can view their own profile'
+  ) THEN
+    CREATE POLICY "Users can view their own profile"
+      ON user_profiles FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can update their own profile"
-  ON user_profiles FOR UPDATE
-  USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_profiles' AND policyname = 'Users can update their own profile'
+  ) THEN
+    CREATE POLICY "Users can update their own profile"
+      ON user_profiles FOR UPDATE
+      USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can insert their own profile"
-  ON user_profiles FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_profiles' AND policyname = 'Users can insert their own profile'
+  ) THEN
+    CREATE POLICY "Users can insert their own profile"
+      ON user_profiles FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can view their own life events"
-  ON user_life_events FOR SELECT
-  USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_life_events' AND policyname = 'Users can view their own life events'
+  ) THEN
+    CREATE POLICY "Users can view their own life events"
+      ON user_life_events FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can manage their own life events"
-  ON user_life_events FOR ALL
-  USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_life_events' AND policyname = 'Users can manage their own life events'
+  ) THEN
+    CREATE POLICY "Users can manage their own life events"
+      ON user_life_events FOR ALL
+      USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can view their own question history"
-  ON user_question_history FOR SELECT
-  USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_question_history' AND policyname = 'Users can view their own question history'
+  ) THEN
+    CREATE POLICY "Users can view their own question history"
+      ON user_question_history FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
 
-CREATE POLICY "Users can view their own context vectors"
-  ON user_context_vectors FOR SELECT
-  USING (auth.uid() = user_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'user_context_vectors' AND policyname = 'Users can view their own context vectors'
+  ) THEN
+    CREATE POLICY "Users can view their own context vectors"
+      ON user_context_vectors FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- トリガー: updated_atの自動更新
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -168,11 +199,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_user_profiles_updated_at ON user_profiles;
 CREATE TRIGGER update_user_profiles_updated_at
   BEFORE UPDATE ON user_profiles
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_life_events_updated_at ON user_life_events;
 CREATE TRIGGER update_user_life_events_updated_at
   BEFORE UPDATE ON user_life_events
   FOR EACH ROW

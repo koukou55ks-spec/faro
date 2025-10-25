@@ -144,9 +144,9 @@ export default function ConnectPage() {
   const [activeCategory, setActiveCategory] = useState<'accounting' | 'finance' | 'insurance'>('accounting')
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 text-white">
+      <div className="flex-shrink-0 bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 text-white">
         <div className="p-6">
           <h1 className="text-3xl font-bold mb-2">
             👨‍💼 エキスパート
@@ -191,8 +191,9 @@ export default function ConnectPage() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-4">
+      {/* Content - スクロール可能 */}
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-20" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="p-4 space-y-4">
         {/* Accounting Software */}
         {activeCategory === 'accounting' && accountingSoftware.map((software, index) => (
           <motion.div
@@ -376,6 +377,7 @@ export default function ConnectPage() {
             </div>
           </div>
         </motion.div>
+        </div>
       </div>
     </div>
   )
