@@ -5,6 +5,7 @@ import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
+import { ToastProvider } from '../components/ui/ToastProvider'
 
 export const metadata: Metadata = {
   title: 'Faro - あなたの生涯お金思考パートナー | AI税金・金融アシスタント',
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'ZeiGuide',
+    title: 'Faro',
   },
 }
 
@@ -76,7 +77,9 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <ErrorBoundary>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </ErrorBoundary>
         <Analytics />
         <SpeedInsights />
