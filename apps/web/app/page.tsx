@@ -125,8 +125,9 @@ export default function MainApp() {
                   <button
                     onClick={handleNewConversation}
                     className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl flex items-center justify-center space-x-2 transition-all shadow-lg"
+                    aria-label="新しいチャットを開始"
                   >
-                    <Plus className="w-5 h-5" />
+                    <Plus className="w-5 h-5" aria-hidden="true" />
                     <span>新しいチャット</span>
                   </button>
                 </div>
@@ -139,8 +140,10 @@ export default function MainApp() {
                     <button
                       onClick={() => setIsChatHistoryOpen(!isChatHistoryOpen)}
                       className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                      aria-label={isChatHistoryOpen ? 'チャット履歴を閉じる' : 'チャット履歴を開く'}
+                      aria-expanded={isChatHistoryOpen}
                     >
-                      <ChevronDown className={`w-4 h-4 transition-transform ${isChatHistoryOpen ? '' : '-rotate-90'}`} />
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isChatHistoryOpen ? '' : '-rotate-90'}`} aria-hidden="true" />
                     </button>
                   </div>
 
@@ -270,8 +273,9 @@ export default function MainApp() {
                     <button
                       onClick={toggleDarkMode}
                       className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                      aria-label={isDarkMode ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
                     >
-                      {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                      {isDarkMode ? <Sun className="w-5 h-5" aria-hidden="true" /> : <Moon className="w-5 h-5" aria-hidden="true" />}
                     </button>
                   </div>
                 </div>
@@ -456,8 +460,8 @@ export default function MainApp() {
 
       {/* Bottom Navigation for Mobile */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-30 safe-bottom">
-          <div className="flex justify-around items-center h-16 px-2">
+        <nav aria-label="メインナビゲーション" className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-30 safe-bottom">
+          <div className="flex justify-around items-center h-16 px-2" role="tablist">
             {navItems.map((item) => {
               const Icon = item.icon
               const isActive = activeTab === item.id
@@ -467,6 +471,9 @@ export default function MainApp() {
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className="flex flex-col items-center justify-center flex-1 py-2 px-1 relative"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-label={item.label}
                 >
                   <div className="relative">
                     <Icon
@@ -503,7 +510,7 @@ export default function MainApp() {
               )
             })}
           </div>
-        </div>
+        </nav>
       )}
 
       {/* Desktop Tab Navigation */}

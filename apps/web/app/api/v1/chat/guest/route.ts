@@ -2,7 +2,7 @@
  * ゲストユーザー向けチャットAPI
  * - データベース不要
  * - ローカルストレージで履歴管理
- * - 1日5回まで無料利用可能
+ * - 1日50回まで無料利用可能
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -33,17 +33,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // レート制限チェック（1日5回）
+    // レート制限チェック（1日50回）
     const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
     const usage = guestUsage.get(guestId)
 
-    if (usage && usage.date === today && usage.count >= 5) {
+    if (usage && usage.date === today && usage.count >= 50) {
       return NextResponse.json(
         {
           error: '本日の利用制限に達しました',
-          limit: 5,
+          limit: 50,
           usage: usage.count,
-          message: '無料プランでは1日5回までご利用いただけます。続けてご利用いただくには、アカウント登録（無料）をお願いします。'
+          message: '無料プランでは1日50回までご利用いただけます。続けてご利用いただくには、アカウント登録（無料）をお願いします。'
         },
         { status: 429 }
       )
@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
       usage: {
         current: currentUsage.count,
-        limit: 5,
-        remaining: 5 - currentUsage.count,
+        limit: 50,
+        remaining: 50 - currentUsage.count,
         plan: 'guest'
       }
     })
