@@ -191,9 +191,9 @@ export default function MyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+    <div className="w-full bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
       {/* ヘッダー */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 py-8 px-4">
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 py-8 px-4 w-full">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center border-2 border-white/30">
@@ -212,8 +212,8 @@ export default function MyPage() {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="max-w-4xl mx-auto px-4 py-8 pb-20">
-        <div className="space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-8 pb-20 w-full">
+        <div className="space-y-6 w-full">
           {/* 完成度バー */}
           <ProfileCompletionBar
             percentage={completion.percentage}
