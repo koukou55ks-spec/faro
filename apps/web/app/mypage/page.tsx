@@ -201,69 +201,6 @@ export default function MyPage() {
 
   const completeness = calculateCompleteness()
 
-  // AIによる分析・助言を生成（実際はAPI呼び出し）
-  const generateAIAdvice = () => {
-    if (!profile) return []
-
-    const advice = []
-
-    // 年収ベースの助言
-    if (profile.annual_income) {
-      if (profile.annual_income >= 20000000) {
-        advice.push('高所得者向けの節税策（法人化、不動産投資）を検討しましょう')
-      } else if (profile.annual_income >= 10000000) {
-        advice.push('ふるさと納税の限度額は約' + Math.floor(profile.annual_income * 0.023).toLocaleString() + '円です')
-      } else if (profile.annual_income >= 3000000) {
-        advice.push('ふるさと納税の限度額は約' + Math.floor(profile.annual_income * 0.020).toLocaleString() + '円です')
-      }
-    }
-
-    // 家族構成ベースの助言
-    if (profile.marital_status === 'married') {
-      advice.push('配偶者控除や配偶者特別控除が利用できる可能性があります')
-    }
-
-    if (profile.num_children && profile.num_children > 0) {
-      advice.push('扶養控除で最大' + (profile.num_children * 380000).toLocaleString() + '円の控除が受けられます')
-    }
-
-    // 関心事ベースの助言
-    if (profile.interests) {
-      if (profile.interests.includes('NISA') && !profile.has_investments) {
-        advice.push('NISAを活用すると年間最大360万円の非課税投資が可能です')
-      }
-      if (profile.interests.includes('iDeCo') && profile.employment_type === 'full_time') {
-        advice.push('iDeCoで掛金全額が所得控除になります（会社員は年間27.6万円まで）')
-      }
-      if (profile.interests.includes('住宅購入') && !profile.has_mortgage) {
-        advice.push('住宅ローン控除で最大400万円の控除が受けられます')
-      }
-    }
-
-    // 投資状況ベースの助言
-    if (profile.has_investments && profile.annual_income && profile.annual_income > 5000000) {
-      advice.push('投資収益の確定申告を忘れずに。損益通算で税負担を軽減できます')
-    }
-
-    // 不安・関心事への対応
-    if (profile.concerns) {
-      if (profile.concerns.includes('税金対策')) {
-        advice.push('節税の基本は控除の最大活用です。医療費控除、生命保険料控除なども確認しましょう')
-      }
-      if (profile.concerns.includes('年金不安')) {
-        advice.push('公的年金だけでなく、iDeCoやNISAで私的年金を準備することを検討しましょう')
-      }
-    }
-
-    if (advice.length === 0) {
-      advice.push('もっと情報を追加すると、より具体的なアドバイスができます')
-    }
-
-    return advice
-  }
-
-  const aiAdvice = generateAIAdvice()
-
   // ローディング表示
   if (loading) {
     return (
@@ -427,63 +364,22 @@ export default function MyPage() {
           </div>
         </section>
 
-        {/* AI助言セクション */}
-        {aiAdvice.length > 0 && (
-          <section className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl p-5 shadow-sm border border-purple-100 dark:border-purple-800">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-500" />
-                <h2 className="text-base font-bold text-gray-900 dark:text-white">AI助言</h2>
-              </div>
-              <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
-                あなた専用のアドバイス
-              </span>
-            </div>
-            <div className="space-y-2">
-              {aiAdvice.map((advice, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl"
-                >
-                  <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
-                      {idx + 1}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 flex-1">
-                    {advice}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
-              <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                プロフィール情報をもっと追加すると、より具体的なアドバイスができます
-              </p>
-            </div>
-          </section>
-        )}
-
         {/* 基本情報 */}
-        <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
+        <section className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-blue-500" />
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">基本情報</h2>
+              <User className="w-4 h-4 text-blue-500" />
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">基本情報</h2>
             </div>
             <button
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               onClick={() => setIsEditModalOpen(true)}
             >
-              <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <Edit2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             <InfoRow icon={Calendar} label="年齢" value={profile?.age ? `${profile.age}歳` : '未設定'} />
             <InfoRow icon={Briefcase} label="職業" value={profile?.occupation || '未設定'} />
             <InfoRow icon={Building2} label="業種" value={profile?.industry || '未設定'} />
@@ -504,21 +400,21 @@ export default function MyPage() {
         </section>
 
         {/* 家族構成 */}
-        <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
+        <section className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-purple-500" />
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">家族構成</h2>
+              <Users className="w-4 h-4 text-purple-500" />
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">家族構成</h2>
             </div>
             <button
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               onClick={() => setIsEditModalOpen(true)}
             >
-              <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <Edit2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             <InfoRow
               icon={Heart}
               label="婚姻状況"
@@ -535,21 +431,21 @@ export default function MyPage() {
         </section>
 
         {/* 収入情報 */}
-        <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
+        <section className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-500" />
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">収入情報</h2>
+              <DollarSign className="w-4 h-4 text-green-500" />
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">収入情報</h2>
             </div>
             <button
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               onClick={() => setIsEditModalOpen(true)}
             >
-              <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <Edit2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             <InfoRow
               icon={TrendingUp}
               label="年収"
@@ -576,21 +472,21 @@ export default function MyPage() {
         </section>
 
         {/* 利用中の制度・サービス */}
-        <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
+        <section className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-orange-500" />
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">利用中の制度・サービス</h2>
+              <Shield className="w-4 h-4 text-orange-500" />
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">利用中の制度・サービス</h2>
             </div>
-            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-              <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+              <Plus className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {/* 金融状況 */}
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">金融状況</p>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">金融状況</p>
               <div className="flex flex-wrap gap-2">
                 {profile?.has_mortgage && <Tag label="住宅ローン" color="orange" />}
                 {profile?.has_savings && <Tag label="貯蓄あり" color="green" />}
@@ -602,8 +498,8 @@ export default function MyPage() {
             </div>
 
             {/* 関心事 */}
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">関心のあること</p>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">関心のあること</p>
               <div className="flex flex-wrap gap-2">
                 {profile?.interests && profile.interests.length > 0 ? (
                   profile.interests.map((interest, idx) => (
@@ -616,8 +512,8 @@ export default function MyPage() {
             </div>
 
             {/* 人生の目標 */}
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">人生の目標</p>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">人生の目標</p>
               <div className="flex flex-wrap gap-2">
                 {profile?.life_goals && profile.life_goals.length > 0 ? (
                   profile.life_goals.map((goal, idx) => (
@@ -631,8 +527,8 @@ export default function MyPage() {
 
             {/* 不安・悩み */}
             {profile?.concerns && profile.concerns.length > 0 && (
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">不安・悩み</p>
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">不安・悩み</p>
                 <div className="flex flex-wrap gap-2">
                   {profile.concerns.map((concern, idx) => (
                     <Tag key={idx} label={concern} color="red" />
