@@ -339,6 +339,34 @@ export default function MyPage() {
       {/* メインコンテンツ - スクロール可能 */}
       <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="px-4 -mt-4 space-y-4 pb-20">
+        {/* システムタブセクション（構造化データ） - AIが参照する重要情報 */}
+        <section className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-5 shadow-sm border-2 border-blue-200 dark:border-blue-800">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-blue-500" />
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">AI用の詳細情報</h2>
+              <span className="px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
+                AI参照
+              </span>
+            </div>
+            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+              AIが必要な情報だけを自動取得
+            </span>
+          </div>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+            ここに入力した情報は、AIチャットで質問した時に必要な項目だけが自動で参照されます。
+            より正確なアドバイスのために、基本情報だけでも入力してください。
+          </p>
+          {token && (
+            <SystemTabPanel
+              token={token}
+              onSaveSuccess={() => {
+                refetch()
+              }}
+            />
+          )}
+        </section>
+
         {/* サブスクリプション状況 */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
@@ -679,29 +707,17 @@ export default function MyPage() {
           )}
         </section>
 
-        {/* システムタブセクション（構造化データ） */}
-        <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Settings className="w-5 h-5 text-blue-500" />
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">詳細情報</h2>
-            </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              より正確なアドバイスのために
-            </span>
-          </div>
-          {token && (
-            <SystemTabPanel
-              token={token}
-              onSaveSuccess={() => {
-                refetch()
-              }}
-            />
-          )}
-        </section>
-
         {/* カスタムタブセクション（NotebookLM風） */}
-        <section>
+        <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="w-5 h-5 text-purple-500" />
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">自由メモ・ファイル管理</h2>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              自由にタブを作成して、メモやファイルを保存できます。
+            </p>
+          </div>
           <CustomTabsSection />
         </section>
 
