@@ -11,7 +11,6 @@ import {
   Building2,
   TrendingUp,
   Shield,
-  Sparkles,
   Plus,
   Edit2,
   Check,
@@ -77,111 +76,6 @@ export default function MyPage() {
     )
   }
 
-  // 情報の完成度を計算
-  const calculateCompleteness = () => {
-    if (!profile) return 0
-
-    let total = 0
-    let filled = 0
-
-    // 基本情報 (5項目)
-    total += 5
-    if (profile.age) filled++
-    if (profile.occupation) filled++
-    if (profile.employment_type) filled++
-    if (profile.prefecture) filled++
-    if (profile.industry) filled++
-
-    // 家族構成 (2項目)
-    total += 2
-    if (profile.marital_status) filled++
-    if (profile.num_children !== undefined) filled++
-
-    // 収入情報 (2項目)
-    total += 2
-    if (profile.annual_income) filled++
-    if (profile.household_income) filled++
-
-    // 関心事・目標 (3項目)
-    total += 3
-    if (profile.interests && profile.interests.length > 0) filled++
-    if (profile.life_goals && profile.life_goals.length > 0) filled++
-    if (profile.concerns && profile.concerns.length > 0) filled++
-
-    // 金融状況 (3項目)
-    total += 3
-    if (profile.has_mortgage !== undefined && profile.has_mortgage !== null) filled++
-    if (profile.has_savings !== undefined && profile.has_savings !== null) filled++
-    if (profile.has_investments !== undefined && profile.has_investments !== null) filled++
-
-    return total > 0 ? Math.round((filled / total) * 100) : 0
-  }
-
-  const completeness = calculateCompleteness()
-
-  // AIによる分析・助言を生成（実際はAPI呼び出し）
-  const generateAIAdvice = () => {
-    if (!profile) return []
-
-    const advice = []
-
-    // 年収ベースの助言
-    if (profile.annual_income) {
-      if (profile.annual_income >= 20000000) {
-        advice.push('高所得者向けの節税策（法人化、不動産投資）を検討しましょう')
-      } else if (profile.annual_income >= 10000000) {
-        advice.push('ふるさと納税の限度額は約' + Math.floor(profile.annual_income * 0.023).toLocaleString() + '円です')
-      } else if (profile.annual_income >= 3000000) {
-        advice.push('ふるさと納税の限度額は約' + Math.floor(profile.annual_income * 0.020).toLocaleString() + '円です')
-      }
-    }
-
-    // 家族構成ベースの助言
-    if (profile.marital_status === 'married') {
-      advice.push('配偶者控除や配偶者特別控除が利用できる可能性があります')
-    }
-
-    if (profile.num_children && profile.num_children > 0) {
-      advice.push('扶養控除で最大' + (profile.num_children * 380000).toLocaleString() + '円の控除が受けられます')
-    }
-
-    // 関心事ベースの助言
-    if (profile.interests) {
-      if (profile.interests.includes('NISA') && !profile.has_investments) {
-        advice.push('NISAを活用すると年間最大360万円の非課税投資が可能です')
-      }
-      if (profile.interests.includes('iDeCo') && profile.employment_type === 'full_time') {
-        advice.push('iDeCoで掛金全額が所得控除になります（会社員は年間27.6万円まで）')
-      }
-      if (profile.interests.includes('住宅購入') && !profile.has_mortgage) {
-        advice.push('住宅ローン控除で最大400万円の控除が受けられます')
-      }
-    }
-
-    // 投資状況ベースの助言
-    if (profile.has_investments && profile.annual_income && profile.annual_income > 5000000) {
-      advice.push('投資収益の確定申告を忘れずに。損益通算で税負担を軽減できます')
-    }
-
-    // 不安・関心事への対応
-    if (profile.concerns) {
-      if (profile.concerns.includes('税金対策')) {
-        advice.push('節税の基本は控除の最大活用です。医療費控除、生命保険料控除なども確認しましょう')
-      }
-      if (profile.concerns.includes('年金不安')) {
-        advice.push('公的年金だけでなく、iDeCoやNISAで私的年金を準備することを検討しましょう')
-      }
-    }
-
-    if (advice.length === 0) {
-      advice.push('もっと情報を追加すると、より具体的なアドバイスができます')
-    }
-
-    return advice
-  }
-
-  const aiAdvice = generateAIAdvice()
-
   // ローディング表示
   if (loading) {
     return (
@@ -232,26 +126,6 @@ export default function MyPage() {
           </a>
         </div>
 
-        {/* 完成度インジケーター */}
-        <div className="bg-white/20 backdrop-blur rounded-2xl p-4 border border-white/30">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-white/90 text-sm font-medium">プロフィール完成度</span>
-            <span className="text-white font-bold text-lg">{completeness}%</span>
-          </div>
-          <div className="w-full bg-white/30 rounded-full h-3 overflow-hidden">
-            <motion.div
-              className="bg-white h-3 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${completeness}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-            />
-          </div>
-          <p className="text-white/70 text-xs mt-2">
-            {completeness < 50 ? '基本情報を追加して、より正確なアドバイスを受けましょう' :
-             completeness < 80 ? 'もう少しで完璧！追加情報でさらに精度UP' :
-             '素晴らしい！Faroが最適なアドバイスを提供できます'}
-          </p>
-        </div>
       </div>
 
       {/* メインコンテンツ - スクロール可能 */}
@@ -316,34 +190,6 @@ export default function MyPage() {
             </div>
           </div>
         </section>
-
-        {/* AIによる分析・助言 */}
-        {completeness >= 30 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-5 border border-indigo-200 dark:border-indigo-800 shadow-lg"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                Faroからの助言
-              </h3>
-            </div>
-            <div className="space-y-2">
-              {aiAdvice.map((advice, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {advice}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </motion.section>
-        )}
 
         {/* 基本情報 */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
@@ -585,27 +431,6 @@ export default function MyPage() {
         <section>
           <CustomTabsSection />
         </section>
-
-        {/* 情報追加を促すCTA */}
-        {completeness < 80 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-gradient-to-r from-purple-500 to-blue-600 rounded-2xl p-6 text-center shadow-xl"
-          >
-            <Sparkles className="w-12 h-12 text-white mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-white mb-2">
-              もっと詳しく教えてください
-            </h3>
-            <p className="text-white/90 text-sm mb-4">
-              情報が充実するほど、Faroはあなたに最適な<br />
-              税金アドバイスを提供できます
-            </p>
-            <button className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:bg-gray-100 transition-colors shadow-lg">
-              プロフィールを完成させる
-            </button>
-          </motion.div>
-        )}
         </div>
       </div>
 
