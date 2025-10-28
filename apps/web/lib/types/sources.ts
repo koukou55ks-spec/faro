@@ -1,99 +1,119 @@
-// ソース管理システムの型定義
+// Sources管理システムの型定義 v5.0
 
-export type SourceType = 'required' | 'document' | 'note'
+// プリセットカテゴリ
+export const PRESET_CATEGORIES = [
+  '収入',
+  '控除',
+  '医療費',
+  '保険',
+  '資産',
+  '負債',
+  'その他'
+] as const
 
-export type SourceStatus = 'empty' | 'partial' | 'complete'
+export type PresetCategory = typeof PRESET_CATEGORIES[number]
 
-// ソースアイテム
+// ソースのタイプ
+export type SourceType = 'text' | 'number' | 'document' | 'link' | 'structured'
+
+// AI参照優先度
+export type AIPriority = 'always' | 'on_demand' | 'manual'
+
+// ソースのコンテンツ型
+export interface SourceContent {
+  // text type
+  text?: string
+
+  // number type
+  number?: {
+    value: number
+    unit?: string
+  }
+
+  // document type
+  document?: {
+    file_name: string
+    file_url: string
+    file_type: string
+    extracted_data?: Record<string, any>
+  }
+
+  // link type
+  link?: {
+    url: string
+    title?: string
+    description?: string
+  }
+
+  // structured type (フィールド・バリューのペア)
+  structured?: Record<string, any>
+}
+
+// ソース
 export interface Source {
   id: string
-  name: string
+  user_id: string
+  title: string
+  category: string // PresetCategory or custom category name
   type: SourceType
-  status: SourceStatus
-  completion?: number // 0-100%
-  usage: string // どこで使われるか
-  value?: string // ユーザーへの価値提示
-  createdAt: string
-  updatedAt: string
-}
-
-// 必須ソース（基本プロファイル）
-export interface RequiredSource extends Source {
-  type: 'required'
-  fields: RequiredField[]
-  missingFields: RequiredField[]
-  impact: string[] // 完成時のメリット
-}
-
-export interface RequiredField {
-  key: string
-  label: string
-  value: any
-  required: boolean
-  missing: boolean
-  impact?: string // このフィールドによる効果
-  type: 'text' | 'number' | 'select' | 'date'
-  options?: string[]
-  unit?: string
-}
-
-// ドキュメントソース
-export interface DocumentSource extends Source {
-  type: 'document'
-  fileName: string
-  fileUrl: string
-  fileType: string
-  extractedData: ExtractedField[]
-  uploadedAt: string
-}
-
-export interface ExtractedField {
-  key: string
-  label: string
-  value: any
-  confidence: number // 0-1
-}
-
-// ノートソース
-export interface NoteSource extends Source {
-  type: 'note'
-  content: string
+  content: SourceContent
   tags: string[]
-  itemCount?: number
+  ai_priority: AIPriority
+  created_at: string
+  updated_at: string
 }
 
-// チャットで参照されたソース
-export interface SourceReference {
-  sourceId: string
-  sourceName: string
-  sourceType: SourceType
-  fieldsUsed: string[]
-  timestamp: string
-}
-
-// コンテキスト解析結果
-export interface ContextAnalysis {
-  requiredFields: string[]
-  availableSources: Source[]
-  missingSources: MissingSource[]
-  confidence: number // 0-1
-}
-
-export interface MissingSource {
+// カスタムカテゴリ
+export interface CustomCategory {
+  id: string
+  user_id: string
   name: string
-  reason: string
-  impact: string
+  color: string
+  icon: string
+  created_at: string
+  updated_at: string
 }
 
-// プロファイル完成度
-export interface ProfileCompletion {
-  percentage: number
-  completedFields: number
-  totalFields: number
-  nextStep: {
-    field: string
-    reason: string
-    value: string
-  }
-  potentialValue: string // "年10万円の節税可能性"
+// ソース作成用の型
+export interface CreateSourceInput {
+  title: string
+  category: string
+  type: SourceType
+  content: SourceContent
+  tags?: string[]
+  ai_priority?: AIPriority
+}
+
+// ソース更新用の型
+export interface UpdateSourceInput {
+  title?: string
+  category?: string
+  type?: SourceType
+  content?: SourceContent
+  tags?: string[]
+  ai_priority?: AIPriority
+}
+
+// カスタムカテゴリ作成用の型
+export interface CreateCustomCategoryInput {
+  name: string
+  color?: string
+  icon?: string
+}
+
+// 基本プロファイル（最小限の固定項目）
+export interface BasicProfile {
+  annual_income: number | null      // 年収
+  age: number | null                // 年齢
+  prefecture: string | null         // 都道府県
+  family_size: number | null        // 家族人数
+  employment_type: string | null    // 雇用形態
+}
+
+// フィルター設定
+export interface SourceFilters {
+  categories?: string[]
+  tags?: string[]
+  types?: SourceType[]
+  search?: string
 }

@@ -1,200 +1,64 @@
 'use client'
 
-import { useMemo } from 'react'
-import { User, Loader2 } from 'lucide-react'
-import { useUserProfile } from '../../lib/hooks/useUserProfile'
-import { useCustomTabs } from '../../lib/hooks/useCustomTabs'
+import { useState } from 'react'
+import { User, Plus, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { useAuth } from '../../lib/hooks/useAuth'
-import { ProfileCompletionBar } from '../../components/features/sources/ProfileCompletionBar'
-import { RequiredSource } from '../../components/features/sources/RequiredSource'
-import { DocumentSource } from '../../components/features/sources/DocumentSource'
-import { NoteSource } from '../../components/features/sources/NoteSource'
-import { RequiredField } from '../../lib/types/sources'
-import { DocumentSource as DocumentSourceType } from '../../lib/types/sources'
+import { useSources } from '../../lib/hooks/useSources'
+import { PRESET_CATEGORIES } from '../../lib/types/sources'
+import { CreateSourceInput } from '../../lib/types/sources'
+import BasicProfileSection from '../../components/features/sources-v5/BasicProfileSection'
+import SourceCard from '../../components/features/sources-v5/SourceCard'
+import AddSourceModal from '../../components/features/sources-v5/AddSourceModal'
+import CategoryFilter from '../../components/features/sources-v5/CategoryFilter'
 
-export default function MyPage() {
-  const { user, loading: authLoading } = useAuth()
-  const { profile, loading: profileLoading, updateProfile, refetch } = useUserProfile()
-  const { tabs } = useCustomTabs()
-  const loading = authLoading || profileLoading
+export default function MyPageV5() {
+  // 状態管理
+  const { user } = useAuth()
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isProfileExpanded, setIsProfileExpanded] = useState(true)
+  const [editingSourceId, setEditingSourceId] = useState<string | null>(null)
 
-  // プロファイル完成度を計算
-  const completion = useMemo(() => {
-    if (!profile) return {
-      percentage: 0,
-      nextStep: {
-        field: '年収',
-        reason: 'ふるさと納税の上限額を計算するために必要です',
-        value: '年10万円の節税可能性'
-      }
+  // フィルター適用
+  const filters = selectedCategories.length > 0 ? { categories: selectedCategories } : undefined
+  const { sources, loading, createSource, updateSource, deleteSource } = useSources(filters)
+
+  // ハンドラー関数
+  const handleCreateSource = async (input: CreateSourceInput) => {
+    try {
+      await createSource(input)
+      setIsModalOpen(false)
+    } catch (err) {
+      console.error('[MyPageV5] Error creating source:', err)
+      alert('ソースの作成に失敗しました')
     }
+  }
 
-    const fields = [
-      { key: 'annual_income', label: '年収', weight: 2 },
-      { key: 'marital_status', label: '婚姻状況', weight: 2 },
-      { key: 'num_dependents', label: '扶養家族', weight: 2 },
-      { key: 'occupation', label: '職業', weight: 1 },
-      { key: 'age', label: '年齢', weight: 1 },
-      { key: 'prefecture', label: '都道府県', weight: 1 },
-    ]
+  const handleEdit = (id: string) => {
+    // TODO: 編集機能を実装（EditSourceModalを作成）
+    console.log('Edit source:', id)
+    alert('編集機能は近日公開予定です')
+  }
 
-    const totalWeight = fields.reduce((sum, f) => sum + f.weight, 0)
-    const completedWeight = fields.reduce((sum, f) => {
-      const value = (profile as any)[f.key]
-      return sum + (value ? f.weight : 0)
-    }, 0)
-
-    const percentage = Math.round((completedWeight / totalWeight) * 100)
-    const missing = fields.find(f => !(profile as any)[f.key])
-
-    return {
-      percentage,
-      nextStep: {
-        field: missing?.label || '',
-        reason: missing?.key === 'annual_income' ? 'ふるさと納税の上限額を計算できます' :
-                missing?.key === 'marital_status' ? '配偶者控除の適用を判定できます' :
-                missing?.key === 'num_dependents' ? '扶養控除の金額を計算できます' :
-                'より正確な節税提案ができます',
-        value: '年10万円以上の節税可能性'
-      }
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('このソースを削除しますか？')) {
+      return
     }
-  }, [profile])
-
-  // 必須フィールドを構築
-  const requiredFields = useMemo((): RequiredField[] => {
-    const getMaritalStatusDisplay = (value: string) => {
-      const map: Record<string, string> = {
-        'single': '独身',
-        'married': '既婚',
-        'divorced': '離婚',
-        'widowed': '死別'
-      }
-      return map[value] || value
-    }
-
-    return [
-      {
-        key: 'annual_income',
-        label: '年収',
-        value: profile?.annual_income ? `${Math.round(profile.annual_income / 10000)}` : null,
-        required: true,
-        missing: !profile?.annual_income,
-        impact: 'ふるさと納税の上限額を計算',
-        type: 'number',
-        unit: '万円'
-      },
-      {
-        key: 'marital_status',
-        label: '婚姻状況',
-        value: profile?.marital_status ? getMaritalStatusDisplay(profile.marital_status) : null,
-        required: true,
-        missing: !profile?.marital_status,
-        impact: '配偶者控除38万円の適用判定',
-        type: 'select',
-        options: ['独身', '既婚', '離婚', '死別']
-      },
-      {
-        key: 'num_dependents',
-        label: '扶養家族',
-        value: profile?.num_dependents ?? null,
-        required: true,
-        missing: profile?.num_dependents === undefined || profile?.num_dependents === null,
-        impact: '扶養控除（1人38万円）',
-        type: 'number',
-        unit: '人'
-      },
-      {
-        key: 'occupation',
-        label: '職業',
-        value: profile?.occupation || null,
-        required: false,
-        missing: !profile?.occupation,
-        impact: '職業別の控除・制度を提案',
-        type: 'text'
-      },
-      {
-        key: 'age',
-        label: '年齢',
-        value: profile?.age ?? null,
-        required: false,
-        missing: !profile?.age,
-        type: 'number',
-        unit: '歳'
-      },
-      {
-        key: 'prefecture',
-        label: '都道府県',
-        value: profile?.prefecture || null,
-        required: false,
-        missing: !profile?.prefecture,
-        impact: '地域別の制度を提案',
-        type: 'text'
-      }
-    ]
-  }, [profile])
-
-  // フィールド更新ハンドラー
-  const handleFieldUpdate = async (key: string, value: any) => {
-    // 値の変換
-    const convertValue = (key: string, val: any) => {
-      if (key === 'annual_income' && val) {
-        return parseInt(val) * 10000 // 万円を円に
-      }
-      if (key === 'marital_status') {
-        const reverseMap: Record<string, string> = {
-          '独身': 'single',
-          '既婚': 'married',
-          '離婚': 'divorced',
-          '死別': 'widowed'
-        }
-        return reverseMap[val] || val
-      }
-      if (key === 'num_dependents' || key === 'age') {
-        return val ? parseInt(val) : null
-      }
-      return val
-    }
-
-    const updates = { [key]: convertValue(key, value) }
 
     try {
-      await updateProfile(updates)
-      await refetch()
+      await deleteSource(id)
     } catch (err) {
-      console.error('Failed to update field:', err)
-      throw err
+      console.error('[MyPageV5] Error deleting source:', err)
+      alert('ソースの削除に失敗しました')
     }
   }
 
-  // ドキュメントアップロード（仮実装）
-  const handleDocumentUpload = async (file: File) => {
-    console.log('Document upload:', file.name)
-    // TODO: OCR処理と情報抽出
-    alert('ドキュメントアップロード機能は近日公開予定です')
-  }
-
-  // カスタムタブページへ遷移
-  const handleNavigateToNotes = () => {
-    // TODO: カスタムタブページへの遷移を実装
-    alert('カスタムタブ機能は近日公開予定です')
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">読み込み中...</p>
-        </div>
-      </div>
-    )
-  }
-
+  // UI構築
   return (
-    <div className="w-full bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+    <div className="w-full bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black min-h-screen">
       {/* ヘッダー */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 py-8 px-4 w-full">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center border-2 border-white/30">
               <User className="w-6 h-6 text-white" />
@@ -204,7 +68,7 @@ export default function MyPage() {
                 {user?.email || 'ゲストユーザー'}
               </h1>
               <p className="text-white/80 text-xs">
-                マイソース
+                マイソース v5.0
               </p>
             </div>
           </div>
@@ -212,54 +76,139 @@ export default function MyPage() {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="max-w-4xl mx-auto px-4 py-8 pb-20 w-full">
+      <div className="max-w-7xl mx-auto px-4 py-8 pb-20 w-full">
         <div className="space-y-6 w-full">
-          {/* 完成度バー */}
-          <ProfileCompletionBar
-            percentage={completion.percentage}
-            nextStep={completion.nextStep}
-          />
-
-          {/* 説明 */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
-              💡 <strong>ソースとは？</strong> AIチャットがあなたに最適な回答をするために参照する情報源です。
-              どの情報がいつ使われるか明示され、必要な情報だけをAIが自動で参照します。
-            </p>
+          {/* 基本プロファイル（折りたたみ可能） */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <button
+              onClick={() => setIsProfileExpanded(!isProfileExpanded)}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+            >
+              <h2 className="text-lg font-semibold text-gray-900">基本プロファイル</h2>
+              {isProfileExpanded ? (
+                <ChevronUp className="w-5 h-5 text-gray-500" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-500" />
+              )}
+            </button>
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                isProfileExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="border-t border-gray-100">
+                <BasicProfileSection />
+              </div>
+            </div>
           </div>
 
-          {/* 必須ソース */}
-          <RequiredSource
-            fields={requiredFields}
-            completion={completion.percentage}
-            impact={[
-              'ふるさと納税の正確な上限額を計算',
-              '利用可能な控除をすべて表示',
-              '年間10万円以上の節税提案'
-            ]}
-            onFieldUpdate={handleFieldUpdate}
+          {/* カテゴリフィルター */}
+          <CategoryFilter
+            categories={[...PRESET_CATEGORIES]}
+            selectedCategories={selectedCategories}
+            onChange={setSelectedCategories}
           />
 
-          {/* ドキュメントソース */}
-          <DocumentSource
-            documents={[]}
-            onUpload={handleDocumentUpload}
-          />
+          {/* ソース一覧 */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                マイソース
+                {selectedCategories.length > 0 && (
+                  <span className="ml-2 text-sm font-normal text-gray-500">
+                    ({sources.length}件)
+                  </span>
+                )}
+              </h2>
+            </div>
 
-          {/* ノートソース */}
-          <NoteSource
-            noteCount={tabs?.length || 0}
-            onNavigateToNotes={handleNavigateToNotes}
-          />
-        </div>
+            {loading ? (
+              // ローディング中のスケルトン表示
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
+                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+                    <div className="h-4 bg-gray-100 rounded w-1/2 mb-4"></div>
+                    <div className="h-20 bg-gray-100 rounded mb-3"></div>
+                    <div className="h-4 bg-gray-100 rounded w-1/3"></div>
+                  </div>
+                ))}
+              </div>
+            ) : sources.length === 0 ? (
+              // 空の状態
+              <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Plus className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {selectedCategories.length > 0
+                      ? 'このカテゴリにはソースがありません'
+                      : 'まだソースがありません'}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-6">
+                    {selectedCategories.length > 0
+                      ? '別のカテゴリを選択するか、新しいソースを追加してください。'
+                      : 'AIがあなたに最適なアドバイスをするための情報源を追加しましょう。'}
+                  </p>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:shadow-lg transition-all duration-200"
+                  >
+                    <Plus className="w-5 h-5" />
+                    最初のソースを追加
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // ソース一覧表示
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sources.map((source) => (
+                  <SourceCard
+                    key={source.id}
+                    source={source}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
-        {/* フッター */}
-        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-            💬 チャットで質問すると、これらのソースが自動的に参照されます
-          </p>
+          {/* 追加ボタン（ソースがある場合） */}
+          {sources.length > 0 && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:shadow-lg transition-all duration-200"
+              >
+                <Plus className="w-5 h-5" />
+                新しいソースを追加
+              </button>
+            </div>
+          )}
+
+          {/* フッター説明 */}
+          <div className="mt-12 pt-8 border-t border-gray-200">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                <strong>ソースとは？</strong> AIチャットがあなたに最適な回答をするために参照する情報源です。
+                どの情報がいつ使われるか明示され、必要な情報だけをAIが自動で参照します。
+              </p>
+            </div>
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+              チャットで質問すると、これらのソースが自動的に参照されます
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* AddSourceModal */}
+      <AddSourceModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreate={handleCreateSource}
+      />
     </div>
   )
 }
