@@ -9,6 +9,7 @@ import { CreateSourceInput } from '../../lib/types/sources'
 import BasicProfileSection from '../../components/features/sources-v5/BasicProfileSection'
 import SourceCard from '../../components/features/sources-v5/SourceCard'
 import AddSourceModal from '../../components/features/sources-v5/AddSourceModal'
+import EditSourceModal from '../../components/features/sources-v5/EditSourceModal'
 import CategoryFilter from '../../components/features/sources-v5/CategoryFilter'
 
 export default function MyPageV5() {
@@ -16,8 +17,9 @@ export default function MyPageV5() {
   const { user } = useAuth()
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isProfileExpanded, setIsProfileExpanded] = useState(true)
-  const [editingSourceId, setEditingSourceId] = useState<string | null>(null)
+  const [editingSource, setEditingSource] = useState<any>(null)
 
   // フィルター適用
   const filters = selectedCategories.length > 0 ? { categories: selectedCategories } : undefined
@@ -35,9 +37,22 @@ export default function MyPageV5() {
   }
 
   const handleEdit = (id: string) => {
-    // TODO: 編集機能を実装（EditSourceModalを作成）
-    console.log('Edit source:', id)
-    alert('編集機能は近日公開予定です')
+    const source = sources.find(s => s.id === id)
+    if (source) {
+      setEditingSource(source)
+      setIsEditModalOpen(true)
+    }
+  }
+
+  const handleUpdateSource = async (id: string, input: any) => {
+    try {
+      await updateSource(id, input)
+      setIsEditModalOpen(false)
+      setEditingSource(null)
+    } catch (err) {
+      console.error('[MyPageV5] Error updating source:', err)
+      alert('ソースの更新に失敗しました')
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -208,6 +223,17 @@ export default function MyPageV5() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreate={handleCreateSource}
+      />
+
+      {/* EditSourceModal */}
+      <EditSourceModal
+        isOpen={isEditModalOpen}
+        source={editingSource}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingSource(null)
+        }}
+        onUpdate={handleUpdateSource}
       />
     </div>
   )

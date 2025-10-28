@@ -60,10 +60,11 @@ export async function PATCH(
     const { id } = await params
     const body: UpdateSourceInput = await req.json()
 
-    // Phase 1: text と number タイプのみサポート
-    if (body.type && !['text', 'number'].includes(body.type)) {
+    // Phase 2: 全タイプサポート
+    const validTypes = ['text', 'number', 'document', 'link', 'structured']
+    if (body.type && !validTypes.includes(body.type)) {
       return NextResponse.json(
-        { error: 'Only text and number types are supported in Phase 1' },
+        { error: `Invalid type. Must be one of: ${validTypes.join(', ')}` },
         { status: 400 }
       )
     }

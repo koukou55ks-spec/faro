@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
-import { CreateSourceInput, PRESET_CATEGORIES, SourceType, AIPriority } from '../../../lib/types/sources'
+import { Source, UpdateSourceInput, PRESET_CATEGORIES, SourceType, AIPriority } from '../../../lib/types/sources'
 
-interface AddSourceModalProps {
+interface EditSourceModalProps {
   isOpen: boolean
+  source: Source | null
   onClose: () => void
-  onCreate: (input: CreateSourceInput) => Promise<void>
+  onUpdate: (id: string, input: UpdateSourceInput) => Promise<void>
 }
 
 const SOURCE_TYPES: { value: SourceType; label: string; description: string }[] = [
@@ -23,7 +24,7 @@ const AI_PRIORITIES: { value: AIPriority; label: string; description: string }[]
   { value: 'manual', label: '手動のみ', description: '手動で指定した時のみ参照します' }
 ]
 
-export default function AddSourceModal({ isOpen, onClose, onCreate }: AddSourceModalProps) {
+export default function EditSourceModal({ isOpen, source, onClose, onUpdate }: EditSourceModalProps) {
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -43,9 +44,34 @@ export default function AddSourceModal({ isOpen, onClose, onCreate }: AddSourceM
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // sourceが変更されたらフォームを初期化
+  useEffect(() => {
+    if (source) {
+      setFormData({
+        title: source.title,
+        category: source.category,
+        type: source.type,
+        textContent: source.content.text || '',
+        numberValue: source.content.number?.value.toString() || '',
+        numberUnit: source.content.number?.unit || '',
+        documentFileName: source.content.document?.file_name || '',
+        documentFileUrl: source.content.document?.file_url || '',
+        documentFileType: source.content.document?.file_type || '',
+        linkUrl: source.content.link?.url || '',
+        linkTitle: source.content.link?.title || '',
+        linkDescription: source.content.link?.description || '',
+        tags: source.tags.join(', '),
+        aiPriority: source.ai_priority
+      })
+      setError(null)
+    }
+  }, [source])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    if (!source) return
 
     // バリデーション
     if (!formData.title.trim()) {
@@ -61,7 +87,7 @@ export default function AddSourceModal({ isOpen, onClose, onCreate }: AddSourceM
       setIsSubmitting(true)
 
       // コンテンツの構築
-      const content: CreateSourceInput['content'] = {}
+      const content: UpdateSourceInput['content'] = {}
 
       if (formData.type === 'text') {
         if (!formData.textContent.trim()) {
@@ -90,7 +116,7 @@ export default function AddSourceModal({ isOpen, onClose, onCreate }: AddSourceM
         content.document = {
           file_name: formData.documentFileName.trim(),
           file_url: formData.documentFileUrl.trim(),
-          file_type: formData.documentFileType.trim() || undefined
+          file_type: formData.documentFileType.trim() || ''
         }
       } else if (formData.type === 'link') {
         if (!formData.linkUrl.trim()) {
@@ -110,7 +136,7 @@ export default function AddSourceModal({ isOpen, onClose, onCreate }: AddSourceM
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0)
 
-      const input: CreateSourceInput = {
+      const input: UpdateSourceInput = {
         title: formData.title.trim(),
         category: formData.category,
         type: formData.type,
@@ -119,29 +145,12 @@ export default function AddSourceModal({ isOpen, onClose, onCreate }: AddSourceM
         ai_priority: formData.aiPriority
       }
 
-      await onCreate(input)
+      await onUpdate(source.id, input)
 
-      // フォームをリセット
-      setFormData({
-        title: '',
-        category: '',
-        type: 'text',
-        textContent: '',
-        numberValue: '',
-        numberUnit: '',
-        documentFileName: '',
-        documentFileUrl: '',
-        documentFileType: '',
-        linkUrl: '',
-        linkTitle: '',
-        linkDescription: '',
-        tags: '',
-        aiPriority: 'on_demand'
-      })
       onClose()
     } catch (err) {
-      console.error('[AddSourceModal] Error creating source:', err)
-      setError(err instanceof Error ? err.message : 'ソースの作成に失敗しました')
+      console.error('[EditSourceModal] Error updating source:', err)
+      setError(err instanceof Error ? err.message : 'ソースの更新に失敗しました')
     } finally {
       setIsSubmitting(false)
     }
@@ -149,35 +158,19 @@ export default function AddSourceModal({ isOpen, onClose, onCreate }: AddSourceM
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setFormData({
-        title: '',
-        category: '',
-        type: 'text',
-        textContent: '',
-        numberValue: '',
-        numberUnit: '',
-        documentFileName: '',
-        documentFileUrl: '',
-        documentFileType: '',
-        linkUrl: '',
-        linkTitle: '',
-        linkDescription: '',
-        tags: '',
-        aiPriority: 'on_demand'
-      })
       setError(null)
       onClose()
     }
   }
 
-  if (!isOpen) return null
+  if (!isOpen || !source) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* ヘッダー */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">新しいソースを追加</h2>
+          <h2 className="text-xl font-semibold text-gray-900">ソースを編集</h2>
           <button
             onClick={handleClose}
             disabled={isSubmitting}
@@ -387,7 +380,7 @@ export default function AddSourceModal({ isOpen, onClose, onCreate }: AddSourceM
               disabled={isSubmitting}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? '作成中...' : '作成'}
+              {isSubmitting ? '更新中...' : '更新'}
             </button>
           </div>
         </form>

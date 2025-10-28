@@ -1,6 +1,6 @@
 'use client'
 
-import { Pencil, Trash2, Calendar, Tag as TagIcon } from 'lucide-react'
+import { Pencil, Trash2, Calendar, Tag as TagIcon, FileText, Link as LinkIcon } from 'lucide-react'
 import { Source } from '../../../lib/types/sources'
 
 interface SourceCardProps {
@@ -65,6 +65,62 @@ export default function SourceCard({ source, onEdit, onDelete }: SourceCardProps
               {source.content.number.unit}
             </span>
           )}
+        </div>
+      )
+    }
+
+    if (source.type === 'document' && source.content.document) {
+      return (
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <FileText className="w-6 h-6 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {source.content.document.file_name}
+            </p>
+            {source.content.document.file_type && (
+              <p className="text-xs text-gray-500 uppercase">
+                {source.content.document.file_type}
+              </p>
+            )}
+            <a
+              href={source.content.document.file_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 hover:underline"
+            >
+              ファイルを開く
+            </a>
+          </div>
+        </div>
+      )
+    }
+
+    if (source.type === 'link' && source.content.link) {
+      return (
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-purple-50 rounded-lg">
+            <LinkIcon className="w-6 h-6 text-purple-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {source.content.link.title || 'リンク'}
+            </p>
+            {source.content.link.description && (
+              <p className="text-xs text-gray-600 line-clamp-2 mt-1">
+                {source.content.link.description}
+              </p>
+            )}
+            <a
+              href={source.content.link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-purple-600 hover:underline truncate block mt-1"
+            >
+              {source.content.link.url}
+            </a>
+          </div>
         </div>
       )
     }

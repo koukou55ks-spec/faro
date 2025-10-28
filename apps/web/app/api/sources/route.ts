@@ -82,10 +82,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Phase 1: text と number タイプのみサポート
-    if (!['text', 'number'].includes(body.type)) {
+    // Phase 2: 全タイプサポート
+    const validTypes = ['text', 'number', 'document', 'link', 'structured']
+    if (!validTypes.includes(body.type)) {
       return NextResponse.json(
-        { error: 'Only text and number types are supported in Phase 1' },
+        { error: `Invalid type. Must be one of: ${validTypes.join(', ')}` },
         { status: 400 }
       )
     }
