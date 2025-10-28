@@ -51,7 +51,7 @@ export function NoteSource({ onNavigateToNotes, noteCount }: NoteSourceProps) {
       )}
 
       <p className="text-xs text-gray-500 mt-4 text-center">
-        💡 カスタムタブで自由に情報を整理できます
+        💡 医療費、保険情報など、自由に情報を整理・管理できます
       </p>
     </div>
   )

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { User, Loader2, FileText } from 'lucide-react'
+import { useMemo } from 'react'
+import { User, Loader2 } from 'lucide-react'
 import { useUserProfile } from '../../lib/hooks/useUserProfile'
 import { useCustomTabs } from '../../lib/hooks/useCustomTabs'
 import { useAuth } from '../../lib/hooks/useAuth'
@@ -173,9 +173,10 @@ export default function MyPage() {
     alert('ドキュメントアップロード機能は近日公開予定です')
   }
 
-  // ノート画面へ遷移
+  // カスタムタブページへ遷移
   const handleNavigateToNotes = () => {
-    window.scrollTo({ top: document.getElementById('notes-section')?.offsetTop || 0, behavior: 'smooth' })
+    // TODO: カスタムタブページへの遷移を実装
+    alert('カスタムタブ機能は近日公開予定です')
   }
 
   if (loading) {
@@ -211,7 +212,7 @@ export default function MyPage() {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 pb-20">
         <div className="space-y-6">
           {/* 完成度バー */}
           <ProfileCompletionBar
@@ -246,38 +247,10 @@ export default function MyPage() {
           />
 
           {/* ノートソース */}
-          <div id="notes-section">
-            <NoteSource
-              noteCount={tabs?.length || 0}
-              onNavigateToNotes={handleNavigateToNotes}
-            />
-          </div>
-
-          {/* カスタムタブセクション */}
-          <div className="border border-gray-300 dark:border-gray-700 rounded-xl p-6 bg-white dark:bg-gray-800">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-5 h-5 text-purple-500" />
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                カスタムタブ
-              </h3>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              医療費、保険情報などを自由に整理・管理できます。
-              AIチャットで関連する質問をすると、自動的に参照されます。
-            </p>
-            <div className="flex gap-3">
-              <a
-                href="#custom-tabs"
-                onClick={(e) => {
-                  e.preventDefault()
-                  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
-                }}
-                className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity text-center"
-              >
-                カスタムタブを見る
-              </a>
-            </div>
-          </div>
+          <NoteSource
+            noteCount={tabs?.length || 0}
+            onNavigateToNotes={handleNavigateToNotes}
+          />
         </div>
 
         {/* フッター */}
