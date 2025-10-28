@@ -53,6 +53,9 @@ export interface UserProfile {
   life_goals?: string[]  // ["老後資金", "住宅購入", "子供の教育費"]
   concerns?: string[]  // ["税金対策", "年金不安", "医療費"]
 
+  // カスタムフィールド（ユーザーが自由に追加）
+  custom_fields?: Record<string, string>  // {"持病": "なし", "趣味": "登山", "ペット": "犬1匹"}
+
   // メタデータ
   created_at: string
   updated_at: string
@@ -139,6 +142,7 @@ export interface CreateUserProfileRequest {
   interests?: string[]
   life_goals?: string[]
   concerns?: string[]
+  custom_fields?: Record<string, string>
   // システムタブから統合されたフィールド
   has_spouse?: boolean
   dependents_count?: number

@@ -21,7 +21,8 @@ import {
   MapPin,
   Loader2,
   Settings,
-  Database
+  Database,
+  X
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUserProfile } from '../../lib/hooks/useUserProfile'
@@ -36,6 +37,9 @@ export default function MyPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false)
   const [isBasicInfoExpanded, setIsBasicInfoExpanded] = useState(false)
+  const [isCustomFieldModalOpen, setIsCustomFieldModalOpen] = useState(false)
+  const [customFieldSection, setCustomFieldSection] = useState<string>('')
+  const [newCustomField, setNewCustomField] = useState({ key: '', value: '' })
   const [newEvent, setNewEvent] = useState({
     event_type: '',
     event_year: new Date().getFullYear(),
@@ -93,6 +97,57 @@ export default function MyPage() {
     } catch (err) {
       console.error('[MyPage] Failed to add event:', err)
     }
+  }
+
+  // カスタムフィールド追加
+  const handleAddCustomField = async () => {
+    if (!newCustomField.key || !newCustomField.value) return
+
+    try {
+      const customFields = profile?.custom_fields || {}
+      const fieldKey = `${customFieldSection}:${newCustomField.key}`
+
+      await updateProfile({
+        custom_fields: {
+          ...customFields,
+          [fieldKey]: newCustomField.value
+        }
+      })
+
+      setNewCustomField({ key: '', value: '' })
+      setIsCustomFieldModalOpen(false)
+      refetch()
+    } catch (err) {
+      console.error('[MyPage] Failed to add custom field:', err)
+    }
+  }
+
+  // カスタムフィールド削除
+  const handleDeleteCustomField = async (fieldKey: string) => {
+    try {
+      const customFields = { ...(profile?.custom_fields || {}) }
+      delete customFields[fieldKey]
+
+      await updateProfile({
+        custom_fields: customFields
+      })
+
+      refetch()
+    } catch (err) {
+      console.error('[MyPage] Failed to delete custom field:', err)
+    }
+  }
+
+  // セクションごとのカスタムフィールドを取得
+  const getCustomFields = (section: string) => {
+    if (!profile?.custom_fields) return []
+    return Object.entries(profile.custom_fields)
+      .filter(([key]) => key.startsWith(`${section}:`))
+      .map(([key, value]) => ({
+        key: key.replace(`${section}:`, ''),
+        fullKey: key,
+        value
+      }))
   }
 
   // プロフィール完成度計算（簡易版）
@@ -249,7 +304,37 @@ export default function MyPage() {
                         compact
                       />
                       <InfoRow icon={MapPin} label="居住地" value={profile?.prefecture ? `${profile.prefecture}${profile.city ? ' ' + profile.city : ''}` : '未設定'} compact />
+
+                      {/* カスタムフィールド */}
+                      {getCustomFields('basic_info').map((field) => (
+                        <div key={field.fullKey} className="flex items-center justify-between py-1">
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{field.key}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium text-gray-900 dark:text-white">{field.value}</span>
+                            <button
+                              onClick={() => handleDeleteCustomField(field.fullKey)}
+                              className="p-0.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                            >
+                              <X className="w-3 h-3 text-gray-400 hover:text-red-500" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+
+                    {/* カスタム項目追加ボタン */}
+                    <button
+                      onClick={() => {
+                        setCustomFieldSection('basic_info')
+                        setIsCustomFieldModalOpen(true)
+                      }}
+                      className="w-full mt-2 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      カスタム項目を追加
+                    </button>
                   </div>
 
                   {/* 家族構成 */}
@@ -280,7 +365,37 @@ export default function MyPage() {
                       />
                       <InfoRow icon={GraduationCap} label="子供" value={profile?.num_children ? `${profile.num_children}人` : '0人'} compact />
                       <InfoRow icon={Users} label="扶養家族" value={profile?.num_dependents ? `${profile.num_dependents}人` : '0人'} compact />
+
+                      {/* カスタムフィールド */}
+                      {getCustomFields('family').map((field) => (
+                        <div key={field.fullKey} className="flex items-center justify-between py-1">
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{field.key}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium text-gray-900 dark:text-white">{field.value}</span>
+                            <button
+                              onClick={() => handleDeleteCustomField(field.fullKey)}
+                              className="p-0.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                            >
+                              <X className="w-3 h-3 text-gray-400 hover:text-red-500" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+
+                    {/* カスタム項目追加ボタン */}
+                    <button
+                      onClick={() => {
+                        setCustomFieldSection('family')
+                        setIsCustomFieldModalOpen(true)
+                      }}
+                      className="w-full mt-2 py-1.5 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      カスタム項目を追加
+                    </button>
                   </div>
 
                   {/* 収入情報 */}
@@ -323,7 +438,37 @@ export default function MyPage() {
                         }
                         compact
                       />
+
+                      {/* カスタムフィールド */}
+                      {getCustomFields('income').map((field) => (
+                        <div key={field.fullKey} className="flex items-center justify-between py-1">
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{field.key}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium text-gray-900 dark:text-white">{field.value}</span>
+                            <button
+                              onClick={() => handleDeleteCustomField(field.fullKey)}
+                              className="p-0.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                            >
+                              <X className="w-3 h-3 text-gray-400 hover:text-red-500" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+
+                    {/* カスタム項目追加ボタン */}
+                    <button
+                      onClick={() => {
+                        setCustomFieldSection('income')
+                        setIsCustomFieldModalOpen(true)
+                      }}
+                      className="w-full mt-2 py-1.5 text-xs text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      カスタム項目を追加
+                    </button>
                   </div>
 
                   {/* 利用中の制度・サービス */}
@@ -533,6 +678,81 @@ export default function MyPage() {
                   <button
                     onClick={handleAddEvent}
                     disabled={!newEvent.event_type}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    追加
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Custom Field Modal */}
+      <AnimatePresence>
+        {isCustomFieldModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => {
+              setIsCustomFieldModalOpen(false)
+              setNewCustomField({ key: '', value: '' })
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                カスタム項目を追加
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    項目名
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustomField.key}
+                    onChange={(e) => setNewCustomField({ ...newCustomField, key: e.target.value })}
+                    placeholder="例: 持病、趣味、ペット"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    内容
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustomField.value}
+                    onChange={(e) => setNewCustomField({ ...newCustomField, value: e.target.value })}
+                    placeholder="例: なし、登山、犬1匹"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setIsCustomFieldModalOpen(false)
+                      setNewCustomField({ key: '', value: '' })
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handleAddCustomField}
+                    disabled={!newCustomField.key || !newCustomField.value}
                     className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     追加
