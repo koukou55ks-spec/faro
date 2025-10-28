@@ -5,6 +5,7 @@ import { useChatStore, Message } from '../stores/chatStore'
 import { MarkdownRenderer } from './MarkdownRenderer'
 import { Send, Sparkles, StopCircle, Copy, Check, Edit2, RefreshCw, Trash2, ArrowDown } from 'lucide-react'
 import { useAuthStore } from '../../../../lib/store/useAuthStore'
+import { getUserPlan, getMessageLimit } from '../../../../lib/constants/chat'
 
 interface ChatPanelProps {
   userId?: string
@@ -32,6 +33,7 @@ export function ChatPanel({ userId, authToken }: ChatPanelProps) {
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null)
   const [editingContent, setEditingContent] = useState('')
   const [showScrollButton, setShowScrollButton] = useState(false)
+  const [isComposing, setIsComposing] = useState(false) // IME入力中かどうか
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -40,6 +42,33 @@ export function ChatPanel({ userId, authToken }: ChatPanelProps) {
   const messages = getCurrentMessages()
   const isGuest = !userId || userId === 'guest' || userId === 'anonymous'
   const token = useAuthStore((state) => state.token)
+
+  // サブスクリプション情報を取得（プラン判定用）
+  const [subscriptionPlan, setSubscriptionPlan] = useState<string | null>(null)
+
+  useEffect(() => {
+    // サブスクリプション情報を取得
+    const fetchSubscription = async () => {
+      if (isGuest) return
+
+      try {
+        const response = await fetch('/api/subscription/status', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setSubscriptionPlan(data.plan || 'free')
+        }
+      } catch (error) {
+        console.error('[ChatPanel] Failed to fetch subscription:', error)
+        setSubscriptionPlan('free')
+      }
+    }
+
+    fetchSubscription()
+  }, [isGuest, token])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -117,11 +146,28 @@ export function ChatPanel({ userId, authToken }: ChatPanelProps) {
       // ゲストモードの場合は専用APIを使用
       const apiEndpoint = isGuest ? '/api/v1/chat/guest' : '/api/v1/chat'
 
+      // プラン判定
+      const userPlan = getUserPlan(isGuest, subscriptionPlan)
+      const maxMessages = getMessageLimit(userPlan)
+
+      // プランに応じた会話履歴の制限
+      const limitedHistory = messages.length > maxMessages
+        ? messages.slice(-maxMessages)
+        : messages
+
       const requestBody: any = {
         message: userInput,
+        // プラン別の会話履歴制限
+        // ゲスト: 10往復（20メッセージ）
+        // Free: 20往復（40メッセージ）
+        // Pro: 100往復（200メッセージ）
+        conversationHistory: limitedHistory.map(m => ({
+          role: m.role,
+          content: m.content
+        }))
       }
 
-      // ゲストモードの場合はguestIdと会話履歴を送信
+      // ゲストモードの場合はguestIdを追加
       if (isGuest) {
         // ゲストIDをlocalStorageから取得または生成
         let guestId = localStorage.getItem('guestId')
@@ -130,11 +176,6 @@ export function ChatPanel({ userId, authToken }: ChatPanelProps) {
           localStorage.setItem('guestId', guestId)
         }
         requestBody.guestId = guestId
-        // 直近の会話履歴を送信（コンテキスト用）
-        requestBody.conversationHistory = messages.slice(-6).map(m => ({
-          role: m.role,
-          content: m.content
-        }))
       }
 
       const headers: any = { 'Content-Type': 'application/json' }
@@ -236,9 +277,22 @@ export function ChatPanel({ userId, authToken }: ChatPanelProps) {
         console.log('[ChatPanel] Request aborted by user')
       } else {
         console.error('Error sending message:', error)
+        let errorContent = 'エラーが発生しました。もう一度お試しください。'
+
+        // より詳細なエラーメッセージ
+        if (error instanceof Error) {
+          if (error.message.includes('利用制限')) {
+            errorContent = error.message
+          } else if (error.message.includes('認証')) {
+            errorContent = '認証エラーが発生しました。ログインし直してください。'
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorContent = 'ネットワークエラーが発生しました。インターネット接続を確認してください。'
+          }
+        }
+
         const errorMessage: Message = {
           role: 'assistant',
-          content: 'エラーが発生しました。もう一度お試しください。',
+          content: `⚠️ ${errorContent}`,
           timestamp: new Date().toISOString(),
         }
         addMessage(errorMessage)
@@ -254,8 +308,19 @@ export function ChatPanel({ userId, authToken }: ChatPanelProps) {
     textareaRef.current?.focus()
   }
 
+  // IME入力開始
+  const handleCompositionStart = () => {
+    setIsComposing(true)
+  }
+
+  // IME入力終了
+  const handleCompositionEnd = () => {
+    setIsComposing(false)
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    // IME入力中、またはShiftキーが押されている場合は送信しない
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
       e.preventDefault()
       handleSend()
     }
@@ -645,6 +710,8 @@ export function ChatPanel({ userId, authToken }: ChatPanelProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onCompositionStart={handleCompositionStart}
+                onCompositionEnd={handleCompositionEnd}
                 placeholder="何でも聞いてください..."
                 rows={1}
                 disabled={isLoading}
@@ -652,9 +719,16 @@ export function ChatPanel({ userId, authToken }: ChatPanelProps) {
                 style={{
                   minHeight: '44px',
                   maxHeight: '240px',
-                  overflow: input.split('\n').length > 1 ? 'auto' : 'hidden',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'pre-wrap',
                   scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(156, 163, 175, 0.4) transparent'
+                  scrollbarColor: 'rgba(156, 163, 175, 0.4) transparent',
+                  // IME入力時の下線やハイライトが見やすくなるように微調整
+                  WebkitTextFillColor: 'currentColor',
+                  caretColor: 'auto'
                 }}
               />
 

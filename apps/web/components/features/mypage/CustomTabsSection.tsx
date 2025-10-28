@@ -2,21 +2,29 @@
 
 import { useState } from 'react'
 import { useCustomTabs } from '../../../lib/hooks/useCustomTabs'
+import { useAuth } from '../../../lib/hooks/useAuth'
 import {
   Plus, Folder, FileText, Link as LinkIcon, Image as ImageIcon,
-  Trash2, ChevronRight, Loader2, X
+  Trash2, ChevronRight, Loader2, X, TrendingUp, DollarSign,
+  Home, Heart, Users, Briefcase, GraduationCap, Shield,
+  Calendar, MapPin, Lightbulb, Star, BookOpen
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CustomTab, CustomTabItem } from '../../../types/custom-tabs'
+import TemplateSelectionModal from '../custom-tabs/TemplateSelectionModal'
+import TemplateFieldForm, { TemplateField } from '../custom-tabs/TemplateFieldForm'
 
 export function CustomTabsSection() {
+  const { token } = useAuth()
   const { tabs, loading, createTab, deleteTab, fetchTabItems, addTabItem } = useCustomTabs()
   const [selectedTab, setSelectedTab] = useState<CustomTab | null>(null)
   const [tabItems, setTabItems] = useState<CustomTabItem[]>([])
   const [isLoadingItems, setIsLoadingItems] = useState(false)
-  const [isCreatingTab, setIsCreatingTab] = useState(false)
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [newTabName, setNewTabName] = useState('')
   const [isAddingItem, setIsAddingItem] = useState(false)
+  const [templateFields, setTemplateFields] = useState<TemplateField[]>([])
   const [newItem, setNewItem] = useState({
     type: 'text' as 'text' | 'link' | 'file' | 'image',
     title: '',
@@ -31,6 +39,19 @@ export function CustomTabsSection() {
     try {
       const items = await fetchTabItems(tab.id)
       setTabItems(items)
+
+      // テンプレートフィールドを取得
+      if (tab.template_id && token) {
+        const response = await fetch(`/api/custom-tab-templates/${tab.template_id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setTemplateFields(data.template?.fields || [])
+        }
+      } else {
+        setTemplateFields([]) // テンプレートなし = 自由形式
+      }
     } catch (err) {
       console.error('Failed to fetch tab items:', err)
     } finally {
@@ -38,17 +59,25 @@ export function CustomTabsSection() {
     }
   }
 
+  const handleTemplateSelect = (template: { id: string; name: string }) => {
+    setSelectedTemplateId(template.id)
+    setNewTabName(template.name)
+    setShowTemplateModal(false)
+  }
+
   const handleCreateTab = async () => {
-    if (!newTabName.trim()) return
+    if (!newTabName.trim() || !selectedTemplateId) return
 
     try {
       const newTab = await createTab({
         name: newTabName,
         icon: 'Folder',
-        color: 'blue'
+        color: 'blue',
+        template_id: selectedTemplateId
       })
       setNewTabName('')
-      setIsCreatingTab(false)
+      setSelectedTemplateId(null)
+      setShowTemplateModal(false)
       handleSelectTab(newTab)
     } catch (err) {
       console.error('Failed to create tab:', err)
@@ -68,6 +97,44 @@ export function CustomTabsSection() {
     } catch (err) {
       console.error('Failed to delete tab:', err)
       alert('タブの削除に失敗しました')
+    }
+  }
+
+  const handleTemplateSubmit = async (formData: Record<string, any>) => {
+    if (!selectedTab) return
+
+    try {
+      // テンプレートフィールドから自動的にタイトルと内容を生成
+      const titleField = templateFields.find(f => f.required) || templateFields[0]
+      const title = formData[titleField?.key] || 'アイテム'
+
+      // 全フィールドを自然言語の文章に変換（Vector RAG最適化）
+      const contentParts: string[] = []
+      templateFields.forEach(field => {
+        const value = formData[field.key]
+        if (value !== undefined && value !== null && value !== '') {
+          const unitText = field.unit ? field.unit : ''
+          contentParts.push(`${field.label}: ${value}${unitText}`)
+        }
+      })
+      const naturalLanguageContent = contentParts.join('、')
+
+      const itemData = {
+        tab_id: selectedTab.id,
+        item_type: 'text' as const,
+        title: String(title),
+        content: naturalLanguageContent, // 自然言語で保存
+        metadata: {
+          template_fields: formData // フィールドデータもメタデータに保存（将来の編集用）
+        }
+      }
+
+      const addedItem = await addTabItem(selectedTab.id, itemData)
+      setTabItems([...tabItems, addedItem])
+      setIsAddingItem(false)
+    } catch (err) {
+      console.error('Failed to add template item:', err)
+      alert('アイテムの追加に失敗しました')
     }
   }
 
@@ -117,6 +184,15 @@ export function CustomTabsSection() {
     }
   }
 
+  const getTabIcon = (iconName?: string) => {
+    const iconMap: Record<string, any> = {
+      Folder, FileText, TrendingUp, DollarSign, Home, Heart,
+      Users, Briefcase, GraduationCap, Shield, Calendar,
+      MapPin, Lightbulb, Star, BookOpen
+    }
+    return iconMap[iconName || 'Folder'] || Folder
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -136,7 +212,7 @@ export function CustomTabsSection() {
             </h2>
           </div>
           <button
-            onClick={() => setIsCreatingTab(true)}
+            onClick={() => setShowTemplateModal(true)}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <Plus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -151,40 +227,45 @@ export function CustomTabsSection() {
         {/* タブリスト */}
         <div className="w-64 border-r border-gray-100 dark:border-gray-700 overflow-y-auto">
           <div className="p-3 space-y-1">
-            {tabs.map(tab => (
-              <div
-                key={tab.id}
-                className={`group relative rounded-lg transition-all ${
-                  selectedTab?.id === tab.id
-                    ? 'bg-purple-50 dark:bg-purple-900/20'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
-              >
-                <button
-                  onClick={() => handleSelectTab(tab)}
-                  className="w-full text-left py-2.5 px-3 flex items-center gap-2"
+            {tabs.map(tab => {
+              const TabIcon = getTabIcon(tab.icon)
+              return (
+                <div
+                  key={tab.id}
+                  className={`group relative rounded-lg transition-all ${
+                    selectedTab?.id === tab.id
+                      ? 'bg-purple-50 dark:bg-purple-900/20'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
                 >
-                  <div className={`w-2 h-2 rounded-full ${getColorClass(tab.color)}`} />
-                  <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {tab.name}
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </button>
-                <button
-                  onClick={() => handleDeleteTab(tab.id)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-opacity"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                </button>
-              </div>
-            ))}
+                  <button
+                    onClick={() => handleSelectTab(tab)}
+                    className="w-full text-left py-2.5 px-3 flex items-center gap-3"
+                  >
+                    <div className={`w-8 h-8 rounded-lg ${getColorClass(tab.color)} flex items-center justify-center flex-shrink-0`}>
+                      <TabIcon className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {tab.name}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTab(tab.id)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-opacity"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                  </button>
+                </div>
+              )
+            })}
 
-            {tabs.length === 0 && !isCreatingTab && (
+            {tabs.length === 0 && !selectedTemplateId && (
               <div className="text-center py-8 text-sm text-gray-500">
                 タブがありません
                 <br />
                 <button
-                  onClick={() => setIsCreatingTab(true)}
+                  onClick={() => setShowTemplateModal(true)}
                   className="text-purple-500 hover:underline mt-2"
                 >
                   最初のタブを作成
@@ -196,17 +277,20 @@ export function CustomTabsSection() {
 
         {/* タブコンテンツ */}
         <div className="flex-1 overflow-y-auto">
-          {isCreatingTab ? (
+          {selectedTemplateId && newTabName ? (
             <div className="p-6">
               <div className="max-w-md">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                   新しいタブを作成
                 </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  テンプレート: {newTabName}
+                </p>
                 <input
                   type="text"
                   value={newTabName}
                   onChange={(e) => setNewTabName(e.target.value)}
-                  placeholder="タブ名（例: 2024年医療費）"
+                  placeholder="タブ名（例: 2024年投資管理）"
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   autoFocus
                   onKeyPress={(e) => e.key === 'Enter' && handleCreateTab()}
@@ -221,7 +305,7 @@ export function CustomTabsSection() {
                   </button>
                   <button
                     onClick={() => {
-                      setIsCreatingTab(false)
+                      setSelectedTemplateId(null)
                       setNewTabName('')
                     }}
                     className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -258,28 +342,46 @@ export function CustomTabsSection() {
                   <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
                 </div>
               ) : tabItems.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-3">
                   {tabItems.map(item => {
                     const ItemIcon = getItemTypeIcon(item.item_type)
                     return (
-                      <div
+                      <motion.div
                         key={item.id}
-                        className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer border border-gray-200 dark:border-gray-700"
                       >
                         <div className="flex items-start gap-3">
-                          <ItemIcon className="w-5 h-5 text-gray-500 mt-0.5" />
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 dark:text-white text-sm">
+                          <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                            <ItemIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
                               {item.title}
                             </h4>
-                            {item.file_type && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                {item.file_type.toUpperCase()}
+                            {item.content && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                                {item.content}
                               </p>
                             )}
+                            <div className="flex items-center gap-2 mt-2">
+                              {item.file_type && (
+                                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs font-medium">
+                                  {item.file_type.toUpperCase()}
+                                </span>
+                              )}
+                              <span className="text-xs text-gray-400">
+                                {new Date(item.created_at).toLocaleDateString('ja-JP', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )
                   })}
                 </div>
@@ -336,6 +438,15 @@ export function CustomTabsSection() {
                 </button>
               </div>
 
+              {/* テンプレートフィールドがあればテンプレートフォーム、なければ従来のフォーム */}
+              {templateFields.length > 0 ? (
+                <TemplateFieldForm
+                  fields={templateFields}
+                  onSubmit={handleTemplateSubmit}
+                  onCancel={() => setIsAddingItem(false)}
+                />
+              ) : (
+              <>
               <div className="space-y-4">
                 {/* タイプ選択 */}
                 <div>
@@ -451,10 +562,22 @@ export function CustomTabsSection() {
                   キャンセル
                 </button>
               </div>
+            </>
+            )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* テンプレート選択モーダル */}
+      {token && (
+        <TemplateSelectionModal
+          isOpen={showTemplateModal}
+          onClose={() => setShowTemplateModal(false)}
+          onSelectTemplate={handleTemplateSelect}
+          token={token}
+        />
+      )}
     </div>
   )
 }

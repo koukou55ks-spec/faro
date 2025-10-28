@@ -100,6 +100,22 @@ export async function POST(request: NextRequest) {
       displayOrder = (count || 0)
     }
 
+    // テンプレートからメタデータを取得
+    let category = null
+    let tags = null
+    if (body.template_id) {
+      const { data: template } = await supabase
+        .from('custom_tab_templates')
+        .select('category, default_tags')
+        .eq('id', body.template_id)
+        .single()
+
+      if (template) {
+        category = template.category
+        tags = template.default_tags
+      }
+    }
+
     // カスタムタブ作成
     const { data: tab, error: createError } = await supabase
       .from('user_custom_tabs')
@@ -109,7 +125,10 @@ export async function POST(request: NextRequest) {
         description: body.description,
         icon: body.icon || 'Folder',
         color: body.color || 'blue',
-        display_order: displayOrder
+        display_order: displayOrder,
+        template_id: body.template_id || null,
+        category: category,
+        tags: tags
       })
       .select()
       .single()

@@ -18,7 +18,7 @@ export class GeminiClient {
     }
 
     this.client = new GoogleGenerativeAI(key)
-    this.chatModel = this.client.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    this.chatModel = this.client.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
     this.embedModel = this.client.getGenerativeModel({ model: 'text-embedding-004' })
   }
 

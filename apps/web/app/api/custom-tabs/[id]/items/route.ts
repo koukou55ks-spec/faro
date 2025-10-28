@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { CustomTabItemCreateRequest } from '../../../../../types/custom-tabs'
+import { UserKnowledgeBase } from '../../../../../lib/ai/knowledge-base'
 
 const getSupabaseClient = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -149,6 +150,72 @@ export async function POST(
         { error: 'Failed to create item' },
         { status: 500 }
       )
+    }
+
+    // ========================================
+    // ナレッジベースに自動保存
+    // ========================================
+    try {
+      const kb = new UserKnowledgeBase()
+
+      // タブのテンプレート情報を取得
+      const { data: tabWithTemplate } = await supabase
+        .from('user_custom_tabs')
+        .select('template_id, category, tags')
+        .eq('id', tabId)
+        .single()
+
+      let category = 'custom_tab'
+      let tags: string[] = []
+
+      // テンプレートが設定されている場合、メタデータを取得
+      if (tabWithTemplate?.template_id) {
+        const { data: template } = await supabase
+          .from('custom_tab_templates')
+          .select('category, default_tags')
+          .eq('id', tabWithTemplate.template_id)
+          .single()
+
+        if (template) {
+          category = template.category || 'custom_tab'
+          tags = template.default_tags || []
+        }
+      } else if (tabWithTemplate?.category) {
+        // テンプレートがなくてもcategoryが設定されている場合
+        category = tabWithTemplate.category
+        tags = tabWithTemplate.tags || []
+      }
+
+      // コンテンツを構築（タイトル + 内容）
+      let contentText = ''
+      if (body.title && body.content) {
+        contentText = `${body.title}: ${body.content}`
+      } else if (body.content) {
+        contentText = body.content
+      } else if (body.title) {
+        contentText = body.title
+      }
+
+      // ファイルの場合
+      if (body.item_type === 'file' && body.title) {
+        contentText = `${body.title}（${body.file_type || 'ファイル'}）がアップロードされています。`
+      }
+
+      // ナレッジベースに追加
+      if (contentText) {
+        await kb.addDocument(user.id, contentText, {
+          type: 'custom_tab',
+          category: category,
+          year: new Date().getFullYear(),
+          source: 'custom_tab',
+          importance: 'medium',
+          tags: tags,
+        })
+        console.log(`[Custom Tab Items API] Indexed item to knowledge base: ${contentText.substring(0, 50)}...`)
+      }
+    } catch (kbError) {
+      console.error('[Custom Tab Items API] Failed to index to knowledge base:', kbError)
+      // ナレッジベースエラーは致命的ではないのでログのみ
     }
 
     return NextResponse.json({ item }, { status: 201 })

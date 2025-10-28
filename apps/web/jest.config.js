@@ -34,6 +34,11 @@ const customJestConfig = {
     '**/__tests__/**/*.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/.next/',
+    '/e2e/', // E2Eテストを除外（Playwrightで実行）
+  ],
 }
 
 module.exports = createJestConfig(customJestConfig)

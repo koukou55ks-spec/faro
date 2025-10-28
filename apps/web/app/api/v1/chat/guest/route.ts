@@ -7,58 +7,51 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import {
+  withErrorHandler,
+  AppError,
+  ErrorCode,
+  validateRequired,
+  wrapExternalApiError,
+} from '../../../../../lib/api/errorHandler'
+import { checkGuestRatelimit } from '../../../../../lib/ratelimit'
 
-// レート制限チェック用（メモリベース、本番ではRedis推奨）
-const guestUsage = new Map<string, { count: number; date: string }>()
+async function handler(request: NextRequest) {
+  // 環境変数チェック
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    throw new AppError(
+      ErrorCode.INTERNAL_SERVER_ERROR,
+      'Gemini API key not configured',
+      500
+    )
+  }
 
-export async function POST(request: NextRequest) {
-  try {
-    // 環境変数チェック
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'サーバー設定エラー' },
-        { status: 500 }
-      )
-    }
+  const body = await request.json()
+  const { message, guestId, conversationHistory = [] } = body
 
-    const body = await request.json()
-    const { message, guestId, conversationHistory = [] } = body
+  // バリデーション
+  validateRequired(body, ['message', 'guestId'])
 
-    // バリデーション
-    if (!message || !guestId) {
-      return NextResponse.json(
-        { error: 'メッセージとゲストIDが必要です' },
-        { status: 400 }
-      )
-    }
+  // レート制限チェック（1日50回）
+  const ratelimitResult = await checkGuestRatelimit(guestId)
 
-    // レート制限チェック（1日50回）
-    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-    const usage = guestUsage.get(guestId)
+  if (!ratelimitResult.success) {
+    throw new AppError(
+      ErrorCode.RATE_LIMIT_EXCEEDED,
+      '無料プランでは1日50回までご利用いただけます。続けてご利用いただくには、アカウント登録（無料）をお願いします。',
+      429,
+      {
+        limit: ratelimitResult.limit,
+        remaining: ratelimitResult.remaining,
+        reset: new Date(ratelimitResult.reset).toISOString(),
+      }
+    )
+  }
 
-    if (usage && usage.date === today && usage.count >= 50) {
-      return NextResponse.json(
-        {
-          error: '本日の利用制限に達しました',
-          limit: 50,
-          usage: usage.count,
-          message: '無料プランでは1日50回までご利用いただけます。続けてご利用いただくには、アカウント登録（無料）をお願いします。'
-        },
-        { status: 429 }
-      )
-    }
-
-    // 使用量を更新
-    if (!usage || usage.date !== today) {
-      guestUsage.set(guestId, { count: 1, date: today })
-    } else {
-      guestUsage.set(guestId, { count: usage.count + 1, date: today })
-    }
-
-    // Gemini APIで回答生成
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  // Gemini APIで回答生成
+  const genAI = new GoogleGenerativeAI(apiKey)
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
 
     // システムプロンプト
     const systemPrompt = `
@@ -87,35 +80,60 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const prompt = `${systemPrompt}\n${conversationContext}\n\nユーザーの質問: ${message}\n\n回答:`
+  const prompt = `${systemPrompt}\n${conversationContext}\n\nユーザーの質問: ${message}\n\n回答:`
 
-    // 回答生成
-    const result = await model.generateContent(prompt)
-    const response = result.response.text()
+  // 回答生成（ストリーミング）
+  try {
+    const encoder = new TextEncoder()
 
-    // 現在の使用状況を取得
-    const currentUsage = guestUsage.get(guestId)!
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const result = await model.generateContentStream(prompt)
 
-    return NextResponse.json({
-      success: true,
-      message: response,
-      timestamp: new Date().toISOString(),
-      usage: {
-        current: currentUsage.count,
-        limit: 50,
-        remaining: 50 - currentUsage.count,
-        plan: 'guest'
+          for await (const chunk of result.stream) {
+            const text = chunk.text()
+            if (text) {
+              // SSE形式でチャンクを送信
+              const data = JSON.stringify({ content: text })
+              controller.enqueue(encoder.encode(`data: ${data}\n\n`))
+            }
+          }
+
+          // メタデータを送信
+          const metadata = JSON.stringify({
+            usage: {
+              current: ratelimitResult.limit - ratelimitResult.remaining,
+              limit: ratelimitResult.limit,
+              remaining: ratelimitResult.remaining,
+              reset: new Date(ratelimitResult.reset).toISOString(),
+              plan: 'guest'
+            },
+            timestamp: new Date().toISOString()
+          })
+          controller.enqueue(encoder.encode(`data: ${metadata}\n\n`))
+
+          // 完了メッセージ
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.close()
+        } catch (error) {
+          console.error('[Guest Chat] Streaming error:', error)
+          controller.error(error)
+        }
       }
     })
 
-  } catch (error) {
-    console.error('[Guest Chat API] エラー:', error)
-    return NextResponse.json(
-      {
-        error: 'チャット処理中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー'
+    // ストリーミングレスポンスを返す
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
       },
-      { status: 500 }
-    )
+    })
+  } catch (error) {
+    throw wrapExternalApiError('Gemini API', error)
   }
 }
+
+export const POST = withErrorHandler(handler as any)

@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { SimpleRAG } from '../../../../lib/ai/rag'
+import { UserKnowledgeBase } from '../../../../lib/ai/knowledge-base'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { message, conversationId } = body
+    const { message, conversationId, conversationHistory = [] } = body
 
     // バリデーション
     if (!message) {
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
     // ユーザーメッセージを保存
     await rag.saveAndIndex(message, userId, effectiveConversationId, 'user')
 
-    // RAGを使って回答生成
+    // RAGを使って回答生成（ストリーミング）
     const systemPrompt = `
 あなたは「Faro」という日本の税金専門AIアシスタントです。
 以下の特徴を持って回答してください：
@@ -145,32 +146,82 @@ export async function POST(request: NextRequest) {
 - ユーザーの状況に応じたパーソナライズされたアドバイス
 `
 
-    const response = await rag.generateWithContext(message, userId, systemPrompt)
+    // ストリーミングレスポンスの設定
+    const encoder = new TextEncoder()
+    let fullResponse = ''
 
-    // アシスタントの回答を保存
-    await rag.saveAndIndex(response, userId, effectiveConversationId, 'assistant')
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // ストリーミング生成（会話履歴を含む）
+          for await (const chunk of rag.generateWithContextStream(
+            message,
+            userId,
+            systemPrompt,
+            conversationHistory
+          )) {
+            fullResponse += chunk
 
-    // 使用量をインクリメント
-    await supabase
-      .from('usage_limits')
-      .update({
-        ai_messages_count: (usage?.ai_messages_count || 0) + 1,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId)
-      .eq('month', currentMonth)
+            // SSE形式でチャンクを送信
+            const data = JSON.stringify({ content: chunk })
+            controller.enqueue(encoder.encode(`data: ${data}\n\n`))
+          }
 
-    // レスポンス返却
-    return NextResponse.json({
-      success: true,
-      conversationId: effectiveConversationId,
-      message: response,
-      timestamp: new Date().toISOString(),
-      usage: {
-        current: currentUsage + 1,
-        limit: messageLimit,
-        plan
+          // 完了メッセージ
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.close()
+
+          // アシスタントの回答を保存（ストリーム完了後）
+          await rag.saveAndIndex(fullResponse, userId, effectiveConversationId, 'assistant')
+
+          // ========================================
+          // ナレッジベースに質問・回答を保存（将来の参照用）
+          // ========================================
+          try {
+            const kb = new UserKnowledgeBase()
+
+            // Q&Aペアとして保存
+            const qaContent = `Q: ${message}\n\nA: ${fullResponse}`
+
+            await kb.addDocument(userId, qaContent, {
+              type: 'qa_history',
+              category: 'chat',
+              year: new Date().getFullYear(),
+              source: 'chat_api',
+              importance: 'medium',
+              tags: ['chat', 'qa'],
+            })
+
+            console.log('[Chat API] Q&A saved to knowledge base')
+          } catch (kbError) {
+            // ナレッジベース保存エラーは致命的ではない
+            console.error('[Chat API] Failed to save to knowledge base:', kbError)
+          }
+
+          // 使用量をインクリメント
+          await supabase
+            .from('usage_limits')
+            .update({
+              ai_messages_count: (usage?.ai_messages_count || 0) + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+            .eq('month', currentMonth)
+
+        } catch (error) {
+          console.error('[Chat API] Streaming error:', error)
+          controller.error(error)
+        }
       }
+    })
+
+    // ストリーミングレスポンスを返す
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     })
 
   } catch (error) {

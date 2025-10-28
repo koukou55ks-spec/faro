@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import {
   User,
   Users,
@@ -31,15 +32,91 @@ import { useSubscription } from '../../lib/hooks/useSubscription'
 import { CustomTabsSection } from '../../components/features/mypage/CustomTabsSection'
 import { ProfileEditModal } from '../../components/features/mypage/ProfileEditModal'
 
+// 大きなコンポーネントは動的インポートでバンドルサイズを削減
+const SystemTabPanel = dynamic(
+  () => import('../../components/features/system-tabs/SystemTabPanel'),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    ),
+    ssr: false, // クライアントサイドのみで読み込む
+  }
+)
+
 export default function MyPage() {
-  const { user, loading: authLoading } = useAuth()
-  const { profile, events, loading: profileLoading, error, createProfile, updateProfile } = useUserProfile()
+  const { user, token, loading: authLoading } = useAuth()
+  const { profile, events, loading: profileLoading, error, createProfile, updateProfile, refetch } = useUserProfile()
   const { subscription, usage, loading: subLoading } = useSubscription()
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false)
+  const [newEvent, setNewEvent] = useState({
+    event_type: '',
+    event_year: new Date().getFullYear(),
+    description: ''
+  })
 
   const loading = authLoading || profileLoading || subLoading
+
+  // プロフィール保存時の処理
+  const handleProfileSave = async (updates: any) => {
+    try {
+      // プロフィールが存在しない場合は作成、存在する場合は更新
+      if (!profile) {
+        await createProfile(updates)
+      } else {
+        await updateProfile(updates)
+      }
+      // 保存後にプロフィールを再取得
+      setTimeout(() => {
+        refetch()
+      }, 500)
+    } catch (err) {
+      console.error('[MyPage] Failed to save profile:', err)
+      throw err
+    }
+  }
+
+  // ライフイベント追加
+  const handleAddEvent = async () => {
+    if (!newEvent.event_type || !token) return
+
+    try {
+      const response = await fetch('/api/profile/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          event_type: newEvent.event_type,
+          event_year: newEvent.event_year,
+          description: newEvent.description
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to add event')
+
+      // リセット
+      setNewEvent({
+        event_type: '',
+        event_year: new Date().getFullYear(),
+        description: ''
+      })
+      setIsAddEventModalOpen(false)
+
+      // 再取得
+      setTimeout(() => {
+        refetch()
+      }, 500)
+    } catch (err) {
+      console.error('[MyPage] Failed to add event:', err)
+      alert('ライフイベントの追加に失敗しました')
+    }
+  }
 
   // デバッグ情報をコンソールに出力
   useEffect(() => {
@@ -77,30 +154,35 @@ export default function MyPage() {
     )
   }
 
-  // 情報の完成度を計算
+  // 情報の完成度を計算（より詳細に）
   const calculateCompleteness = () => {
     if (!profile) return 0
 
     let total = 0
     let filled = 0
 
-    // 基本情報 (5項目)
-    total += 5
+    // 基本情報 (8項目)
+    total += 8
     if (profile.age) filled++
+    if (profile.birth_year) filled++
+    if (profile.gender) filled++
     if (profile.occupation) filled++
     if (profile.employment_type) filled++
     if (profile.prefecture) filled++
+    if (profile.city) filled++
     if (profile.industry) filled++
 
-    // 家族構成 (2項目)
-    total += 2
+    // 家族構成 (3項目)
+    total += 3
     if (profile.marital_status) filled++
-    if (profile.num_children !== undefined) filled++
+    if (profile.num_children !== undefined && profile.num_children !== null) filled++
+    if (profile.num_dependents !== undefined && profile.num_dependents !== null) filled++
 
-    // 収入情報 (2項目)
-    total += 2
+    // 収入情報 (3項目)
+    total += 3
     if (profile.annual_income) filled++
     if (profile.household_income) filled++
+    if (profile.residence_type) filled++
 
     // 関心事・目標 (3項目)
     total += 3
@@ -108,7 +190,7 @@ export default function MyPage() {
     if (profile.life_goals && profile.life_goals.length > 0) filled++
     if (profile.concerns && profile.concerns.length > 0) filled++
 
-    // 金融状況 (3項目)
+    // 金融状況 (3項目) - booleanなので値がセットされていればカウント
     total += 3
     if (profile.has_mortgage !== undefined && profile.has_mortgage !== null) filled++
     if (profile.has_savings !== undefined && profile.has_savings !== null) filled++
@@ -317,32 +399,45 @@ export default function MyPage() {
           </div>
         </section>
 
-        {/* AIによる分析・助言 */}
-        {completeness >= 30 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-5 border border-indigo-200 dark:border-indigo-800 shadow-lg"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
+        {/* AI助言セクション */}
+        {aiAdvice.length > 0 && (
+          <section className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl p-5 shadow-sm border border-purple-100 dark:border-purple-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-500" />
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">AI助言</h2>
               </div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                Faroからの助言
-              </h3>
+              <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                あなた専用のアドバイス
+              </span>
             </div>
             <div className="space-y-2">
               {aiAdvice.map((advice, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl"
+                >
+                  <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
+                      {idx + 1}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 flex-1">
                     {advice}
                   </p>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </motion.section>
+            <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
+              <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                プロフィール情報をもっと追加すると、より具体的なアドバイスができます
+              </p>
+            </div>
+          </section>
         )}
 
         {/* 基本情報 */}
@@ -430,13 +525,13 @@ export default function MyPage() {
             <InfoRow
               icon={TrendingUp}
               label="年収"
-              value={profile?.annual_income ? `${profile.annual_income.toLocaleString()}円` : '未設定'}
+              value={profile?.annual_income ? `${Math.round(profile.annual_income / 10000).toLocaleString()}万円` : '未設定'}
               highlight={!!profile?.annual_income}
             />
             <InfoRow
               icon={TrendingUp}
               label="世帯年収"
-              value={profile?.household_income ? `${profile.household_income.toLocaleString()}円` : '未設定'}
+              value={profile?.household_income ? `${Math.round(profile.household_income / 10000).toLocaleString()}万円` : '未設定'}
               highlight={!!profile?.household_income}
             />
             <InfoRow
@@ -527,7 +622,10 @@ export default function MyPage() {
               <Calendar className="w-5 h-5 text-pink-500" />
               <h2 className="text-base font-bold text-gray-900 dark:text-white">ライフイベント予定</h2>
             </div>
-            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <button
+              onClick={() => setIsAddEventModalOpen(true)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
               <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
@@ -581,6 +679,27 @@ export default function MyPage() {
           )}
         </section>
 
+        {/* システムタブセクション（構造化データ） */}
+        <section className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-blue-500" />
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">詳細情報</h2>
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              より正確なアドバイスのために
+            </span>
+          </div>
+          {token && (
+            <SystemTabPanel
+              token={token}
+              onSaveSuccess={() => {
+                refetch()
+              }}
+            />
+          )}
+        </section>
+
         {/* カスタムタブセクション（NotebookLM風） */}
         <section>
           <CustomTabsSection />
@@ -601,7 +720,10 @@ export default function MyPage() {
               情報が充実するほど、Faroはあなたに最適な<br />
               税金アドバイスを提供できます
             </p>
-            <button className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:bg-gray-100 transition-colors shadow-lg">
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:bg-gray-100 transition-colors shadow-lg"
+            >
               プロフィールを完成させる
             </button>
           </motion.div>
@@ -614,8 +736,111 @@ export default function MyPage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         profile={profile}
-        onSave={updateProfile}
+        onSave={handleProfileSave}
       />
+
+      {/* Add Event Modal */}
+      <AnimatePresence>
+        {isAddEventModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setIsAddEventModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  ライフイベントを追加
+                </h3>
+                <button
+                  onClick={() => setIsAddEventModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    イベント種類
+                  </label>
+                  <select
+                    value={newEvent.event_type}
+                    onChange={(e) => setNewEvent({ ...newEvent, event_type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">選択してください</option>
+                    <option value="marriage">結婚</option>
+                    <option value="child_birth">出産</option>
+                    <option value="job_change">転職</option>
+                    <option value="promotion">昇進</option>
+                    <option value="retirement">退職</option>
+                    <option value="house_purchase">住宅購入</option>
+                    <option value="house_sale">住宅売却</option>
+                    <option value="relocation">転居</option>
+                    <option value="inheritance">相続</option>
+                    <option value="business_start">起業</option>
+                    <option value="business_close">事業終了</option>
+                    <option value="other">その他</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    予定年
+                  </label>
+                  <input
+                    type="number"
+                    value={newEvent.event_year}
+                    onChange={(e) => setNewEvent({ ...newEvent, event_year: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    min={new Date().getFullYear()}
+                    max={new Date().getFullYear() + 50}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    メモ（任意）
+                  </label>
+                  <textarea
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    rows={3}
+                    placeholder="例: 第一子誕生予定"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={handleAddEvent}
+                  disabled={!newEvent.event_type}
+                  className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  追加
+                </button>
+                <button
+                  onClick={() => setIsAddEventModalOpen(false)}
+                  className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  キャンセル
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

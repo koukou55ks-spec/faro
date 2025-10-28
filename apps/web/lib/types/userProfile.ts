@@ -139,6 +139,12 @@ export interface CreateUserProfileRequest {
   interests?: string[]
   life_goals?: string[]
   concerns?: string[]
+  // システムタブから統合されたフィールド
+  has_spouse?: boolean
+  dependents_count?: number
+  medical_expenses?: number
+  insurance_premium?: number
+  donation_amount?: number
 }
 
 export interface UpdateUserProfileRequest extends Partial<CreateUserProfileRequest> {}

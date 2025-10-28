@@ -8,6 +8,9 @@ export interface CustomTab {
   icon?: string // lucide-react icon name
   color?: string // blue, purple, green, etc.
   display_order: number
+  template_id?: string // テンプレートID（構造化データ用）
+  category?: string // カテゴリ（Vector検索用）
+  tags?: string[] // タグ（Vector検索用）
   created_at: string
   updated_at: string
 }
@@ -34,6 +37,7 @@ export interface CustomTabCreateRequest {
   icon?: string
   color?: string
   display_order?: number
+  template_id?: string // テンプレートID（構造化データ用）
 }
 
 export interface CustomTabUpdateRequest {
